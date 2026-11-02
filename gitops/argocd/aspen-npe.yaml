@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: aspen-npe
+  namespace: openshift-gitops
+
+spec:
+
+  project: default
+
+  source:
+
+    repoURL: https://github.com/rciatulchadha/aspen
+
+    targetRevision: main
+
+    path: gitops/overlays/npe
+
+  destination:
+
+    server: https://kubernetes.default.svc
+
+    namespace: aspen
+
+  syncPolicy:
+
+    automated:
+
+      prune: true
+
+      selfHeal: true
+
+    syncOptions:
+
+      - CreateNamespace=false
+
+      - PruneLast=true

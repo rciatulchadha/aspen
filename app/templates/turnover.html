@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Turnover
+{% endblock %}
+
+{% block content %}
+
+
+{% if activity_added %}
+
+<div class="alert alert-success">
+    Activity added to Turnover successfully.
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <p class="eyebrow">
+            TURNOVER
+        </p>
+
+        <h1>
+            Turnover Activities
+        </h1>
+
+        <p>
+            Operational Activities currently
+            included in ASPEN Turnover.
+        </p>
+
+    </div>
+
+
+    <div class="detail-actions">
+
+        <a
+            class="secondary-button"
+            href="/web/turnover/mps"
+        >
+            MPS
+        </a>
+
+        <a
+            class="primary-button"
+            href="/web/turnover/add"
+        >
+            + Add Activity
+        </a>
+
+    </div>
+
+</div>
+
+
+<form
+    method="get"
+    action="/web/turnover"
+    class="filters turnover-filters"
+>
+
+    <div class="field">
+
+        <label for="environment">
+            Turnover Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+        >
+
+            <option value="">
+                All
+            </option>
+
+            {% for env in environments %}
+
+            <option
+                value="{{ env.description }}"
+                {% if env.description == selected_environment %}
+                selected
+                {% endif %}
+            >
+                {{ env.description }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="filter-actions">
+
+        <button type="submit">
+            Apply Filter
+        </button>
+
+        <a
+            class="secondary-button"
+            href="/web/turnover"
+        >
+            Reset
+        </a>
+
+    </div>
+
+</form>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+    <thead>
+
+        <tr>
+            <th>Task</th>
+            <th>Estimated Time</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Turnover Environment</th>
+            <th>Sub-environment</th>
+            <th>EOX Date</th>
+            <th>Comments</th>
+        </tr>
+
+    </thead>
+
+
+    <tbody>
+
+    {% for row in rows %}
+
+        <tr>
+
+            <td>
+
+                <a
+                    href="/web/activities/{{ row.activityid }}"
+                >
+                    {{ row.taskno }}
+                </a>
+
+            </td>
+
+
+            <td class="nowrap">
+
+                {{
+                    row.est_time.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                }}
+
+            </td>
+
+
+            <td>
+                {{ row.title }}
+            </td>
+
+
+            <td>
+
+                <span
+                    class="status status-{{ (
+                        row.status
+                        or 'none'
+                    )|lower }}"
+                >
+                    {{ row.status or "None" }}
+                </span>
+
+            </td>
+
+
+            <td>
+                {{ row.environment }}
+            </td>
+
+
+            <td>
+                {{ row.subenvironment or "—" }}
+            </td>
+
+
+            <td>
+
+                {% if row.eoxdate %}
+
+                {{
+                    row.eoxdate.strftime(
+                        "%Y-%m-%d"
+                    )
+                }}
+
+                {% else %}
+
+                —
+
+                {% endif %}
+
+            </td>
+
+
+            <td>
+                {{ row.comments or "—" }}
+            </td>
+
+        </tr>
+
+
+    {% else %}
+
+        <tr>
+
+            <td
+                colspan="8"
+                class="empty-state"
+            >
+                No Activities are currently
+                assigned to Turnover.
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endblock %}

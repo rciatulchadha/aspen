@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}
+Activity {{ activity.taskno }}
+{% endblock %}
+
+{% block content %}
+
+
+{% if activity_added %}
+<div class="alert alert-success">
+    Activity created successfully.
+</div>
+{% endif %}
+
+
+{% if activity_updated %}
+<div class="alert alert-success">
+    Activity updated successfully.
+</div>
+{% endif %}
+
+
+{% if activity_deleted %}
+<div class="alert alert-warning">
+    Activity has been soft deleted.
+    Its history and Events remain available.
+</div>
+{% endif %}
+
+
+{% if activity_restored %}
+<div class="alert alert-success">
+    Activity restored successfully.
+</div>
+{% endif %}
+
+
+{% if event_added %}
+<div class="alert alert-success">
+    Event added successfully.
+</div>
+{% endif %}
+
+
+<div class="page-heading detail-heading">
+
+    <div>
+        <a
+            class="back-link"
+            href="/web/activities"
+        >
+            ← Back to Activities
+        </a>
+
+        <p class="eyebrow">
+            ACTIVITY {{ activity.id }}
+        </p>
+
+        <h1>
+            {{ activity.taskno }}
+            ·
+            {{ activity.title or "(No title)" }}
+        </h1>
+    </div>
+
+
+    <div class="detail-actions">
+
+        <span
+            class="status status-{{ (
+                activity.status or 'none'
+            )|lower }}"
+        >
+            {{ activity.status or "None" }}
+        </span>
+
+
+        <a
+            class="secondary-button"
+            href="/web/activities/{{ activity.id }}/edit"
+        >
+            Edit Activity
+        </a>
+
+
+        {% if activity.deleted %}
+
+        <form
+            method="post"
+            action="/web/activities/{{ activity.id }}/restore"
+            class="inline-form"
+        >
+            <button
+                type="submit"
+                class="restore-button"
+            >
+                Restore
+            </button>
+        </form>
+
+        {% else %}
+
+        <form
+            method="post"
+            action="/web/activities/{{ activity.id }}/delete"
+            class="inline-form"
+            onsubmit="return confirm(
+                'Soft delete this Activity? Events and history will be preserved.'
+            );"
+        >
+            <button
+                type="submit"
+                class="danger-button"
+            >
+                Delete
+            </button>
+        </form>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+{% if activity.deleted %}
+
+<div class="deleted-banner">
+    This Activity is currently deleted.
+    Historical data and Events are preserved.
+</div>
+
+{% endif %}
+
+
+<section class="detail-grid">
+
+    <article class="detail-card">
+        <h2>Schedule</h2>
+
+        <dl>
+
+            <dt>Estimated time</dt>
+
+            <dd>
+                {% if activity.est_time %}
+                    {{
+                        activity.est_time.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                    }}
+                {% else %}
+                    —
+                {% endif %}
+            </dd>
+
+
+            <dt>Environment</dt>
+            <dd>
+                {{ activity.environment or "—" }}
+            </dd>
+
+
+            <dt>Sub-environment</dt>
+            <dd>
+                {{ activity.subenvironment or "—" }}
+            </dd>
+
+
+            <dt>Resource</dt>
+            <dd>
+                {{ activity.resource or "—" }}
+            </dd>
+
+
+            <dt>Dependency</dt>
+            <dd>
+                {{ activity.dependency or "—" }}
+            </dd>
+
+        </dl>
+    </article>
+
+
+    <article class="detail-card">
+
+        <h2>Activity flags</h2>
+
+        <dl>
+
+            <dt>Status</dt>
+
+            <dd>
+                <span
+                    class="status status-{{ (
+                        activity.status or 'none'
+                    )|lower }}"
+                >
+                    {{ activity.status or "None" }}
+                </span>
+            </dd>
+
+
+            <dt>Closed</dt>
+            <dd>
+                {{ activity.closed or "—" }}
+            </dd>
+
+
+            <dt>Unplanned</dt>
+            <dd>
+                {{
+                    "Yes"
+                    if activity.unplannedact
+                    else "No"
+                }}
+            </dd>
+
+
+            <dt>Critical</dt>
+            <dd>
+                {{
+                    "Yes"
+                    if activity.criticalact
+                    else "No"
+                }}
+            </dd>
+
+
+            <dt>Deleted</dt>
+            <dd>
+                {{
+                    "Yes"
+                    if activity.deleted
+                    else "No"
+                }}
+            </dd>
+
+
+            <dt>Approved</dt>
+            <dd>
+                {{ activity.approved or "—" }}
+            </dd>
+
+        </dl>
+
+    </article>
+
+</section>
+
+
+<section class="detail-card full-width">
+
+    <h2>Details</h2>
+
+    <div class="preserve-text">
+        {{
+            activity.details
+            or "No activity details recorded."
+        }}
+    </div>
+
+</section>
+
+
+<section class="detail-card full-width">
+
+    <h2>Notes</h2>
+
+    <div class="preserve-text">
+        {{
+            activity.note
+            or "No notes recorded."
+        }}
+    </div>
+
+</section>
+
+
+<section class="events-section">
+
+    <div class="section-heading">
+
+        <div>
+            <p class="eyebrow">
+                OPERATIONS HISTORY
+            </p>
+
+            <h2>
+                Events
+
+                <span class="count-badge">
+                    {{ activity.events|length }}
+                </span>
+            </h2>
+        </div>
+
+    </div>
+
+
+    {% if not activity.deleted %}
+
+    <article class="detail-card add-event-card">
+
+        <h2>Add Event</h2>
+
+        <p class="form-description">
+            Add an operational update to this Activity.
+        </p>
+
+
+        <form
+            method="post"
+            action="/web/activities/{{ activity.id }}/events"
+            class="event-form"
+        >
+
+            <div class="field">
+
+                <label for="time_started">
+                    Event start time
+                </label>
+
+                <input
+                    id="time_started"
+                    name="time_started"
+                    type="datetime-local"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="operator">
+                    Operator
+                </label>
+
+                <input
+                    id="operator"
+                    name="operator"
+                    type="text"
+                    maxlength="50"
+                    placeholder="Your user name"
+                    required
+                >
+
+            </div>
+
+
+            <div class="field full-form-field">
+
+                <label for="details">
+                    Event details
+                </label>
+
+                <textarea
+                    id="details"
+                    name="details"
+                    rows="5"
+                    placeholder="Describe the operational update"
+                    required
+                ></textarea>
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <button type="submit">
+                    Add Event
+                </button>
+
+            </div>
+
+        </form>
+
+    </article>
+
+    {% endif %}
+
+
+    {% if activity.events %}
+
+    <div class="timeline">
+
+        {% for event in activity.events %}
+
+        <article class="timeline-event">
+
+            <div class="timeline-marker"></div>
+
+
+            <div class="timeline-content">
+
+                <div class="timeline-header">
+
+                    <strong>
+                        Event {{ loop.index }}
+                    </strong>
+
+                    <span>
+
+                        {% if event.time_started %}
+
+                        {{
+                            event.time_started.strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            )
+                        }}
+
+                        {% else %}
+
+                        Start time not recorded
+
+                        {% endif %}
+
+                    </span>
+
+                </div>
+
+
+                <div class="event-operator">
+
+                    Operator:
+
+                    <strong>
+                        {{ event.operator or "—" }}
+                    </strong>
+
+                </div>
+
+
+                <div class="preserve-text event-details">
+
+                    {{
+                        event.details
+                        or "No event details recorded."
+                    }}
+
+                </div>
+
+
+                <div class="event-metadata">
+
+                    Serial {{ event.serial }}
+
+                    {% if event.systimeentered %}
+
+                    · Recorded
+
+                    {{
+                        event.systimeentered.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                    }}
+
+                    {% endif %}
+
+
+                    {% if event.time_updated %}
+
+                    · Updated
+
+                    {{
+                        event.time_updated.strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                    }}
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state card-empty">
+        No Events are recorded for this Activity.
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}

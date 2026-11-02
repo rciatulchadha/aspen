@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add Activity to Turnover
+{% endblock %}
+
+{% block content %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/turnover"
+        >
+            ← Back to Turnover
+        </a>
+
+        <p class="eyebrow">
+            TURNOVER
+        </p>
+
+        <h1>
+            Add Activity to Turnover
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+<form
+    method="post"
+    action="/web/turnover/add"
+    class="turnover-form"
+>
+
+    <div class="field full-form-field">
+
+        <label for="activity_id">
+            Activity
+        </label>
+
+        <select
+            id="activity_id"
+            name="activity_id"
+            required
+        >
+
+            <option value="">
+                Select Activity
+            </option>
+
+
+            {% if activity %}
+
+            <option
+                value="{{ activity.id }}"
+                selected
+            >
+                {{ activity.taskno }}
+                ·
+                {{ activity.title }}
+                ·
+                {{ activity.environment }}
+            </option>
+
+            {% endif %}
+
+
+            {% for item in activities %}
+
+            {% if not activity or item.id != activity.id %}
+
+            <option
+                value="{{ item.id }}"
+            >
+                {{ item.taskno }}
+                ·
+                {{ item.est_time.strftime(
+                    "%Y-%m-%d %H:%M"
+                ) }}
+                ·
+                {{ item.title }}
+            </option>
+
+            {% endif %}
+
+            {% endfor %}
+
+        </select>
+
+        <small class="field-help">
+            Shows the most recent
+            100 non-deleted Activities.
+        </small>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="environment">
+            Turnover Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+            required
+        >
+
+            <option value="">
+                Select environment
+            </option>
+
+            {% for env in environments %}
+
+            <option
+                value="{{ env.description }}"
+                data-env-id="{{ env.id }}"
+            >
+                {{ env.description }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="subenvironment">
+            Sub-environment
+        </label>
+
+        <select
+            id="subenvironment"
+            name="subenvironment"
+        >
+
+            <option value="">
+                None
+            </option>
+
+            {% for sub in subenvironments %}
+
+            <option
+                value="{{ sub.description }}"
+                data-environment-id="{{ sub.environmentid }}"
+            >
+                {{ sub.description }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="eoxdate">
+            EOX Date
+        </label>
+
+        <input
+            id="eoxdate"
+            name="eoxdate"
+            type="datetime-local"
+        >
+
+    </div>
+
+
+    <div class="field full-form-field">
+
+        <label for="comments">
+            Comments
+        </label>
+
+        <textarea
+            id="comments"
+            name="comments"
+            rows="5"
+            placeholder="Turnover comments"
+        ></textarea>
+
+    </div>
+
+
+    <div class="form-actions full-form-field">
+
+        <a
+            class="secondary-button"
+            href="/web/turnover"
+        >
+            Cancel
+        </a>
+
+        <button type="submit">
+            Add to Turnover
+        </button>
+
+    </div>
+
+</form>
+
+</section>
+
+
+<script>
+(function () {
+    const environment =
+        document.getElementById(
+            "environment"
+        );
+
+    const subenvironment =
+        document.getElementById(
+            "subenvironment"
+        );
+
+    function filterSubenvironments() {
+        const selected =
+            environment.options[
+                environment.selectedIndex
+            ];
+
+        const environmentId =
+            selected
+                ? selected.dataset.envId
+                : "";
+
+        Array.from(
+            subenvironment.options
+        ).forEach(function (option) {
+
+            if (!option.value) {
+                option.hidden = false;
+                return;
+            }
+
+            option.hidden =
+                option.dataset.environmentId
+                !== environmentId;
+        });
+
+        subenvironment.value = "";
+    }
+
+    environment.addEventListener(
+        "change",
+        filterSubenvironments
+    );
+
+    filterSubenvironments();
+})();
+</script>
+
+{% endblock %}

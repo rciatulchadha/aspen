@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Daily Task {{ task.taskno }}
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/daily-tasks"
+        >
+            ← Back to Daily Tasks
+        </a>
+
+        <p class="eyebrow">
+            DAILY TASK {{ task.serial }}
+        </p>
+
+        <h1>
+            Edit Daily Task {{ task.taskno }}
+        </h1>
+
+        <p>
+            Update the schedule window and task
+            information. The assigned Task Number
+            and Weekday cannot be changed.
+        </p>
+
+    </div>
+
+
+    <span
+        class="schedule-status schedule-status-{{ schedule_status|lower }}"
+    >
+        {{ schedule_status }}
+    </span>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+{% if task.deleted %}
+
+<div class="deleted-banner">
+    This Daily Task is currently deleted and will
+    not generate new Activities.
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+    <div class="readonly-task-summary">
+
+        <div>
+
+            <span class="summary-label">
+                Task Number
+            </span>
+
+            <strong>
+                {{ task.taskno }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Environment
+            </span>
+
+            <strong>
+                {{ task.environment }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Weekday
+            </span>
+
+            <strong>
+                {{ weekday_name }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Template Status
+            </span>
+
+            <strong>
+                {{ schedule_status }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/web/daily-tasks/{{ task.serial }}/edit"
+        class="activity-form"
+    >
+
+        <div class="field">
+
+            <label for="effective_from">
+                Effective From
+            </label>
+
+            <input
+                id="effective_from"
+                name="effective_from"
+                type="date"
+                value="{{ task.effective_from.isoformat() }}"
+                required
+            >
+
+            <small class="field-help">
+                First date on which this task is
+                eligible for schedule generation.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="effective_to">
+                Effective To
+            </label>
+
+            <input
+                id="effective_to"
+                name="effective_to"
+                type="date"
+                value="{% if task.effective_to %}{{ task.effective_to.isoformat() }}{% endif %}"
+            >
+
+            <small class="field-help">
+                Leave blank for an open-ended task.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="time">
+                Scheduled Time
+            </label>
+
+            <input
+                id="time"
+                name="time"
+                type="time"
+                value="{{ task.time }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="subenvironment">
+                Sub-environment
+            </label>
+
+            <input
+                id="subenvironment"
+                name="subenvironment"
+                maxlength="25"
+                value="{{ task.subenvironment or '' }}"
+            >
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="title">
+                Title
+            </label>
+
+            <input
+                id="title"
+                name="title"
+                maxlength="255"
+                value="{{ task.title }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="details">
+                Details
+            </label>
+
+            <textarea
+                id="details"
+                name="details"
+                rows="7"
+                required
+            >{{ task.details }}</textarea>
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="note">
+                Notes
+            </label>
+
+            <textarea
+                id="note"
+                name="note"
+                rows="4"
+            >{{ task.note or '' }}</textarea>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="dependency">
+                Dependency
+            </label>
+
+            <input
+                id="dependency"
+                name="dependency"
+                maxlength="100"
+                value="{{ task.dependency or '' }}"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="resource">
+                Resource
+            </label>
+
+            <input
+                id="resource"
+                name="resource"
+                maxlength="20"
+                value="{{ task.resource or '' }}"
+            >
+
+        </div>
+
+
+        <div class="field checkbox-field">
+
+            <label>
+
+                <input
+                    type="checkbox"
+                    name="criticalact"
+                    value="true"
+                    {% if task.criticalact %}
+                    checked
+                    {% endif %}
+                >
+
+                Critical Activity
+
+            </label>
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <a
+                class="secondary-button"
+                href="/web/daily-tasks"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                Save Changes
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

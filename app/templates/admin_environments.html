@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Environment Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin"
+        >
+            ← Back to Administration
+        </a>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            Environments
+        </h1>
+
+    </div>
+
+</div>
+
+
+<div class="admin-environment-list">
+
+{% for env in environments %}
+
+<section class="detail-card admin-section">
+
+    <form
+        method="post"
+        action="/web/admin/environments/{{ env.id }}/update"
+        class="admin-form"
+    >
+
+        <div class="field">
+
+            <label>
+                Description
+            </label>
+
+            <input
+                name="description"
+                maxlength="50"
+                value="{{ env.description }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Database Key
+            </label>
+
+            <input
+                name="dbkey"
+                maxlength="10"
+                value="{{ env.dbkey }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Task Length
+            </label>
+
+            <input
+                name="tasklength"
+                type="number"
+                min="1"
+                value="{{ env.tasklength }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Command Line
+            </label>
+
+            <input
+                name="commandline"
+                maxlength="51"
+                value="{{ env.commandline or '' }}"
+            >
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <button type="submit">
+                Save Environment
+            </button>
+
+        </div>
+
+    </form>
+
+
+    <div class="environment-metadata">
+
+        <span>
+            PC End Time:
+            <strong>
+                {{ env.timeend or "—" }}
+            </strong>
+        </span>
+
+        <span>
+            Report:
+            <strong>
+                {{ env.reporttitle or "—" }}
+            </strong>
+        </span>
+
+        <span>
+            Billing:
+            <strong>
+                {% if env.billenabled is none %}
+                    —
+                {% elif env.billenabled %}
+                    Enabled
+                {% else %}
+                    Disabled
+                {% endif %}
+            </strong>
+        </span>
+
+    </div>
+
+</section>
+
+{% endfor %}
+
+</div>
+
+
+<section class="detail-card admin-section">
+
+    <h2>
+        Add Sub-environment
+    </h2>
+
+    <form
+        method="post"
+        action="/web/admin/subenvironments/add"
+        class="admin-form"
+    >
+
+        <div class="field">
+
+            <label>
+                Environment
+            </label>
+
+            <select
+                name="environment_id"
+                required
+            >
+
+                {% for env in environments %}
+
+                <option value="{{ env.id }}">
+                    {{ env.description }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Description
+            </label>
+
+            <input
+                name="description"
+                maxlength="25"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Sort Order
+            </label>
+
+            <input
+                name="sortorder"
+                type="number"
+                value="1"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <button type="submit">
+                Add Sub-environment
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<section class="admin-section">
+
+    <h2>
+        Existing Sub-environments
+    </h2>
+
+    <div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Environment</th>
+                    <th>Description</th>
+                    <th>Sort Order</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for row in subenvironments %}
+
+            <tr>
+
+                <td>
+                    {{ row.environment }}
+                </td>
+
+                <td>
+                    {{ row.description }}
+                </td>
+
+                <td>
+                    {{ row.sortorder }}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

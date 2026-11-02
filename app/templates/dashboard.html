@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Dashboard
+{% endblock %}
+
+{% block content %}
+
+
+<section class="hero">
+
+    <div>
+
+        <p class="eyebrow">
+            WORKLOAD AUTOMATION
+        </p>
+
+        <h1>
+            ASPEN Operations Dashboard
+        </h1>
+
+        <p>
+            Manage operational Activities, Events,
+            Production Control, Turnover and reporting
+            through the modern ASPEN web application.
+        </p>
+
+    </div>
+
+</section>
+
+
+<section class="module-grid">
+
+
+    <!-- =====================================================
+         ACTIVITIES
+
+         Reader:
+             View Activities and Events
+
+         Operator:
+             View, create and update Activities
+             Add Events
+             Cannot delete Activities
+
+         Admin:
+             Full Activity access
+         ===================================================== -->
+
+    <a
+        class="module-card"
+        href="/web/activities"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Activities
+            </h2>
+
+            {% if request.state.user.is_admin %}
+
+            <span class="module-access-badge access-admin">
+                Full Access
+            </span>
+
+            {% elif request.state.user.is_operator %}
+
+            <span class="module-access-badge access-operator">
+                Update Access
+            </span>
+
+            {% else %}
+
+            <span class="module-access-badge access-reader">
+                Read Only
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <p>
+            Browse scheduled Activities, review
+            operational status and inspect Event history.
+        </p>
+
+
+        {% if request.state.user.is_admin %}
+
+        <span>
+            Manage Activities →
+        </span>
+
+        {% elif request.state.user.is_operator %}
+
+        <span>
+            View / Update Activities →
+        </span>
+
+        {% else %}
+
+        <span>
+            Browse Activities →
+        </span>
+
+        {% endif %}
+
+    </a>
+
+
+    <!-- =====================================================
+         DAILY TASKS
+
+         Admin only.
+         Reader and Operator do not see this module.
+         ===================================================== -->
+
+    {% if request.state.user.is_admin %}
+
+    <a
+        class="module-card"
+        href="/web/daily-tasks"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Daily Tasks
+            </h2>
+
+            <span class="module-access-badge access-admin">
+                Admin
+            </span>
+
+        </div>
+
+
+        <p>
+            Maintain reusable Daily Task templates,
+            execution times, task numbers and
+            critical-task configuration.
+        </p>
+
+        <span>
+            Manage Daily Tasks →
+        </span>
+
+    </a>
+
+    {% endif %}
+
+
+    <!-- =====================================================
+         PRODUCTION CONTROL
+
+         Reader / Operator:
+             Preview only
+
+         Admin:
+             Preview and populate
+         ===================================================== -->
+
+    <a
+        class="module-card"
+        href="/web/production-control"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Production Control
+            </h2>
+
+            {% if request.state.user.is_admin %}
+
+            <span class="module-access-badge access-admin">
+                Full Access
+            </span>
+
+            {% else %}
+
+            <span class="module-access-badge access-reader">
+                Preview Only
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <p>
+            Preview generated schedules, task numbers,
+            execution times and EOX transformations.
+        </p>
+
+
+        {% if request.state.user.is_admin %}
+
+        <span>
+            Preview / Populate Schedule →
+        </span>
+
+        {% else %}
+
+        <span>
+            Preview Schedule →
+        </span>
+
+        {% endif %}
+
+    </a>
+
+
+    <!-- =====================================================
+         TURNOVER
+
+         Reader / Operator:
+             View only
+
+         Admin:
+             View and update
+         ===================================================== -->
+
+    <a
+        class="module-card"
+        href="/web/turnover"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Turnover
+            </h2>
+
+            {% if request.state.user.is_admin %}
+
+            <span class="module-access-badge access-admin">
+                Full Access
+            </span>
+
+            {% else %}
+
+            <span class="module-access-badge access-reader">
+                Read Only
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <p>
+            Review operational Turnover Activities,
+            environments, comments and EOX information.
+        </p>
+
+
+        {% if request.state.user.is_admin %}
+
+        <span>
+            Manage Turnover →
+        </span>
+
+        {% else %}
+
+        <span>
+            View Turnover →
+        </span>
+
+        {% endif %}
+
+    </a>
+
+
+    <!-- =====================================================
+         MPS
+
+         Reader / Operator:
+             View only
+
+         Admin:
+             View and create
+         ===================================================== -->
+
+    <a
+        class="module-card"
+        href="/web/turnover/mps"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                MPS
+            </h2>
+
+            {% if request.state.user.is_admin %}
+
+            <span class="module-access-badge access-admin">
+                Full Access
+            </span>
+
+            {% else %}
+
+            <span class="module-access-badge access-reader">
+                Read Only
+            </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <p>
+            Review Mainframe Production Status,
+            active cycles and historical MPS records.
+        </p>
+
+
+        {% if request.state.user.is_admin %}
+
+        <span>
+            View / Add MPS →
+        </span>
+
+        {% else %}
+
+        <span>
+            View MPS →
+        </span>
+
+        {% endif %}
+
+    </a>
+
+
+    <!-- =====================================================
+         REPORTS
+
+         Reader / Operator / Admin:
+             View and run reports
+         ===================================================== -->
+
+    <a
+        class="module-card"
+        href="/web/reports"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Reports
+            </h2>
+
+            <span class="module-access-badge access-reader">
+                Report Access
+            </span>
+
+        </div>
+
+
+        <p>
+            Access ROCC, Archive, SREQ,
+            Billing FYI and SLA Exception reports.
+        </p>
+
+        <span>
+            Open Reports →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         ADMINISTRATION
+
+         Admin only.
+         ===================================================== -->
+
+    {% if request.state.user.is_admin %}
+
+    <a
+        class="module-card"
+        href="/web/admin/security"
+    >
+
+        <div class="module-card-header">
+
+            <h2>
+                Administration
+            </h2>
+
+            <span class="module-access-badge access-admin">
+                Admin Only
+            </span>
+
+        </div>
+
+
+        <p>
+            Manage Emergency Mode, temporary local
+            Reader and Operator accounts, security
+            settings and access auditing.
+        </p>
+
+        <span>
+            Open Administration →
+        </span>
+
+    </a>
+
+    {% endif %}
+
+
+</section>
+
+
+<section class="dashboard-session-card">
+
+    <div>
+
+        <p class="eyebrow">
+            CURRENT SESSION
+        </p>
+
+        <h2>
+            {{
+                request.state.user.display_name
+            }}
+        </h2>
+
+    </div>
+
+
+    <dl>
+
+        <div>
+
+            <dt>
+                Username
+            </dt>
+
+            <dd>
+                {{
+                    request.state.user.username
+                }}
+            </dd>
+
+        </div>
+
+
+        <div>
+
+            <dt>
+                Role
+            </dt>
+
+            <dd>
+                {{
+                    request.state.user.role
+                }}
+            </dd>
+
+        </div>
+
+
+        <div>
+
+            <dt>
+                Authentication
+            </dt>
+
+            <dd>
+                {{
+                    request.state.user
+                    .authentication_type
+                }}
+            </dd>
+
+        </div>
+
+
+        <div>
+
+            <dt>
+                Idle Timeout
+            </dt>
+
+            <dd>
+                2 hours
+            </dd>
+
+        </div>
+
+    </dl>
+
+</section>
+
+{% endblock %}

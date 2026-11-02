@@ -1,0 +1,183 @@
+.admin-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(250px, 1fr)
+        );
+
+    gap: 20px;
+}
+
+
+.admin-card {
+    display: block;
+
+    padding: 24px;
+
+    background: white;
+
+    border:
+        1px solid
+        #dce3ec;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 8px 24px
+        rgba(18, 38, 63, 0.08);
+}
+
+
+.admin-card:hover {
+    border-color: #7dd3fc;
+
+    text-decoration: none;
+
+    transform: translateY(-2px);
+}
+
+
+.admin-card h2 {
+    margin-top: 0;
+
+    color: #172033;
+}
+
+
+.admin-card p {
+    min-height: 54px;
+
+    color: #627086;
+
+    line-height: 1.5;
+}
+
+
+.admin-section {
+    margin-top: 22px;
+}
+
+
+.admin-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(200px, 1fr)
+        );
+
+    gap: 18px;
+}
+
+
+.admin-environment-list {
+    display: grid;
+    gap: 18px;
+}
+
+
+.environment-metadata {
+    margin-top: 18px;
+    padding-top: 16px;
+
+    border-top:
+        1px solid
+        #dce3ec;
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 20px;
+
+    color: #627086;
+
+    font-size: 13px;
+}
+
+
+.subscription-options {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            3,
+            minmax(180px, 1fr)
+        );
+
+    gap: 12px;
+}
+
+
+.subscription-options label {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.inline-edit-form {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+.inline-edit-form input {
+    min-width: 100px;
+    height: 36px;
+
+    padding: 0 8px;
+
+    border:
+        1px solid
+        #cbd5e1;
+
+    border-radius: 6px;
+}
+
+
+.inline-edit-form button {
+    min-height: 36px;
+    padding: 6px 10px;
+
+    font-size: 12px;
+}
+
+
+.colour-preview {
+    display: inline-block;
+
+    width: 28px;
+    height: 18px;
+
+    margin-right: 8px;
+
+    border:
+        1px solid
+        #94a3b8;
+
+    border-radius: 4px;
+
+    vertical-align: middle;
+}
+
+
+@media (max-width: 700px) {
+
+    .admin-form,
+    .subscription-options {
+        grid-template-columns: 1fr;
+    }
+
+
+    .inline-edit-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+}

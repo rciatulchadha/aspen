@@ -1,0 +1,147 @@
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+    <thead>
+
+        <tr>
+            <th>Task</th>
+            <th>Estimated Time</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Resource</th>
+            <th>Sub-environment</th>
+            <th>Event Time</th>
+            <th>Operator</th>
+            <th>Event Details</th>
+        </tr>
+
+    </thead>
+
+
+    <tbody>
+
+    {% for row in rows %}
+
+        <tr>
+
+            <td>
+
+                <a
+                    href="/web/activities/{{ row.actid }}"
+                >
+                    {{ row.taskno }}
+                </a>
+
+            </td>
+
+
+            <td class="nowrap">
+
+                {% if row.est_time %}
+
+                {{
+                    row.est_time.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                }}
+
+                {% else %}
+
+                —
+
+                {% endif %}
+
+            </td>
+
+
+            <td>
+
+                <a
+                    href="/web/activities/{{ row.actid }}"
+                >
+                    {{ row.title or "—" }}
+                </a>
+
+            </td>
+
+
+            <td>
+
+                <span
+                    class="status status-{{ (
+                        row.status
+                        or 'none'
+                    )|lower }}"
+                >
+                    {{ row.status or "None" }}
+                </span>
+
+            </td>
+
+
+            <td>
+                {{ row.resource or "—" }}
+            </td>
+
+
+            <td>
+                {{ row.subenvironment or "—" }}
+            </td>
+
+
+            <td class="nowrap">
+
+                {% if row.time_started %}
+
+                {{
+                    row.time_started.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                }}
+
+                {% else %}
+
+                —
+
+                {% endif %}
+
+            </td>
+
+
+            <td>
+                {{ row.operator or "—" }}
+            </td>
+
+
+            <td class="report-details">
+                {{ row.evtdetails or "—" }}
+            </td>
+
+        </tr>
+
+
+    {% else %}
+
+        <tr>
+
+            <td
+                colspan="9"
+                class="empty-state"
+            >
+                No report records found.
+            </td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+</div>
+
+</div>

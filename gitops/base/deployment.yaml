@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: aspen
+
+spec:
+
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: aspen
+
+  template:
+
+    metadata:
+      labels:
+        app: aspen
+
+    spec:
+
+      imagePullSecrets:
+        - name: aspen-quay-pull
+
+      containers:
+
+        - name: aspen
+
+          image: aspen-image
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+
+            - name: http
+              containerPort: 8085
+              protocol: TCP
+
+          envFrom:
+
+            - configMapRef:
+                name: aspen-config
+
+            - secretRef:
+                name: aspen-secret
+
+          resources:
+
+            requests:
+              cpu: 100m
+              memory: 256Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          startupProbe:
+
+            tcpSocket:
+              port: http
+
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+
+            httpGet:
+              path: /health
+              port: http
+
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+
+            tcpSocket:
+              port: http
+
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3

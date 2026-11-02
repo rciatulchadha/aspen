@@ -1,0 +1,70 @@
+name: ASPEN Build
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: aspen
+
+jobs:
+
+  build:
+
+    runs-on:
+      - self-hosted
+
+    permissions:
+      contents: read
+
+    steps:
+
+      - name: Checkout ASPEN
+        uses: actions/checkout@v4
+
+
+      - name: Show build information
+        run: |
+          echo "Commit: $GITHUB_SHA"
+          echo "Branch: $GITHUB_REF_NAME"
+          python --version
+          podman --version
+
+
+      - name: Compile ASPEN
+        run: |
+          python -m compileall app scripts
+
+
+      - name: Build ASPEN image
+        run: |
+          podman build \
+            --pull \
+            -f Containerfile \
+            -t "${IMAGE_NAME}:${GITHUB_SHA}" \
+            .
+
+
+      - name: Validate container dependencies
+        run: |
+          podman run \
+            --rm \
+            --entrypoint python \
+            "${IMAGE_NAME}:${GITHUB_SHA}" \
+            -c "import fastapi, sqlalchemy, psycopg, jinja2, pwdlib; print('ASPEN container dependencies OK')"
+
+
+      - name: Validate ASPEN application import
+        run: |
+          podman run \
+            --rm \
+            -e VSR_DATABASE_URL="postgresql+psycopg://test:test@localhost:5432/test" \
+            -e VSR_SESSION_SECRET="github-build-validation" \
+            -e VSR_LOCAL_AUTH_ENABLED="true" \
+            -e VSR_SESSION_IDLE_MINUTES="120" \
+            --entrypoint python \
+            "${IMAGE_NAME}:${GITHUB_SHA}" \
+            -c "from app.main import app; print('ASPEN application import OK')"

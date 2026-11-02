@@ -1,0 +1,158 @@
+.user-management-filters {
+    grid-template-columns:
+        minmax(240px, 2fr)
+        minmax(170px, 1fr)
+        minmax(200px, 1fr)
+        auto;
+}
+
+
+.user-form-card {
+    max-width: 940px;
+}
+
+
+.user-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(220px, 1fr)
+        );
+
+    gap: 18px;
+}
+
+
+.role-description {
+    padding: 16px;
+
+    background: #f8fafc;
+
+    border:
+        1px solid
+        #dce3ec;
+
+    border-radius: 10px;
+
+    grid-column: 1 / -1;
+}
+
+
+.role-description strong {
+    color: #172033;
+}
+
+
+.role-description p {
+    margin:
+        4px
+        0
+        13px;
+
+    color: #627086;
+
+    line-height: 1.45;
+}
+
+
+.role-description p:last-child {
+    margin-bottom: 0;
+}
+
+
+.user-actions {
+    min-width: 180px;
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+
+.reader-badge,
+.operator-badge,
+.protected-badge,
+.locked-badge,
+.password-required-badge,
+.password-current-badge {
+    display: inline-flex;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+.reader-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+
+.operator-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+
+.protected-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+
+.locked-badge {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+
+.password-required-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+
+.password-current-badge {
+    background: #dcfce7;
+    color: #027a48;
+}
+
+
+@media (max-width: 1000px) {
+
+    .user-management-filters {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .user-form,
+    .user-management-filters {
+        grid-template-columns: 1fr;
+    }
+
+
+    .user-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .user-actions > *,
+    .user-actions form button {
+        width: 100%;
+    }
+
+}

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Archive Report
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/reports"
+        >
+            ← Back to Reports
+        </a>
+
+        <p class="eyebrow">
+            HISTORICAL REPORTING
+        </p>
+
+        <h1>
+            Archive Report
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<form
+    method="get"
+    action="/web/reports/archive"
+    class="report-filters"
+>
+
+    <div class="field">
+
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+            required
+        >
+
+            <option value="">
+                Select environment
+            </option>
+
+            {% for value in environments %}
+
+            <option
+                value="{{ value }}"
+                {% if value == environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="date_from">
+            From
+        </label>
+
+        <input
+            id="date_from"
+            name="date_from"
+            type="date"
+            value="{{ date_from }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="date_to">
+            To
+        </label>
+
+        <input
+            id="date_to"
+            name="date_to"
+            type="date"
+            value="{{ date_to }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-actions">
+
+        <button type="submit">
+            Run Archive Report
+        </button>
+
+    </div>
+
+</form>
+
+
+{% if environment and date_from and date_to %}
+
+<div class="report-summary">
+    <strong>
+        {{ rows|length }}
+    </strong>
+    archive rows returned.
+</div>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Task</th>
+    <th>Estimated Time</th>
+    <th>Title</th>
+    <th>Status</th>
+    <th>Resource</th>
+    <th>Event Time</th>
+    <th>Operator</th>
+    <th>Event Details</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+        {{ row.taskno }}
+    </td>
+
+
+    <td class="nowrap">
+
+        {% if row.est_time %}
+
+        {{
+            row.est_time.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        }}
+
+        {% else %}
+
+        —
+
+        {% endif %}
+
+    </td>
+
+
+    <td>
+        {{ row.title or "—" }}
+    </td>
+
+
+    <td>
+        {{ row.status or "—" }}
+    </td>
+
+
+    <td>
+        {{ row.resource or "—" }}
+    </td>
+
+
+    <td class="nowrap">
+
+        {% if row.time_started %}
+
+        {{
+            row.time_started.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        }}
+
+        {% else %}
+
+        —
+
+        {% endif %}
+
+    </td>
+
+
+    <td>
+        {{ row.operator or "—" }}
+    </td>
+
+
+    <td>
+        {{ row.evtdetails or "—" }}
+    </td>
+
+</tr>
+
+
+{% else %}
+
+<tr>
+
+    <td
+        colspan="8"
+        class="empty-state"
+    >
+        No archive records found.
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

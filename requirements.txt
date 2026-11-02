@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+pydantic-settings
+jinja2
+python-multipart
+pwdlib[argon2]
+itsdangerous

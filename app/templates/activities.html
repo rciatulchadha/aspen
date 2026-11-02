@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Activities
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">
+            OPERATIONS
+        </p>
+
+        <h1>Activities</h1>
+
+        <p>
+            {{ "{:,}".format(total_rows) }}
+            matching activities
+        </p>
+    </div>
+
+    <a
+        class="primary-button"
+        href="/web/activities/new"
+    >
+        + Add Activity
+    </a>
+</div>
+
+
+<form
+    method="get"
+    action="/web/activities"
+    class="filters"
+>
+    <div class="field">
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+        >
+            <option value="">All</option>
+
+            {% for value in environments %}
+            <option
+                value="{{ value }}"
+                {% if value == selected_environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+
+    <div class="field">
+        <label for="subenvironment">
+            Sub-environment
+        </label>
+
+        <select
+            id="subenvironment"
+            name="subenvironment"
+        >
+            <option value="">All</option>
+
+            {% for value in subenvironments %}
+            <option
+                value="{{ value }}"
+                {% if value == selected_subenvironment %}
+                selected
+                {% endif %}
+            >
+                {{ value or "(blank)" }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+
+    <div class="field">
+        <label for="status">
+            Status
+        </label>
+
+        <select
+            id="status"
+            name="status"
+        >
+            <option value="">All</option>
+
+            {% for value in statuses %}
+            <option
+                value="{{ value }}"
+                {% if value == selected_status %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+
+    <div class="field search-field">
+        <label for="search">
+            Search
+        </label>
+
+        <input
+            id="search"
+            name="search"
+            value="{{ search }}"
+            placeholder="Task, title, details or resource"
+        >
+    </div>
+
+
+    <div class="field checkbox-field">
+        <label>
+            <input
+                type="checkbox"
+                name="include_deleted"
+                value="true"
+                {% if include_deleted %}
+                checked
+                {% endif %}
+            >
+
+            Include deleted
+        </label>
+    </div>
+
+
+    <div class="filter-actions">
+        <button type="submit">
+            Apply Filters
+        </button>
+
+        <a
+            class="secondary-button"
+            href="/web/activities"
+        >
+            Reset
+        </a>
+    </div>
+</form>
+
+
+<div class="table-card">
+    <div class="table-scroll">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Estimated Time</th>
+                    <th>Title</th>
+                    <th>Environment</th>
+                    <th>Sub-environment</th>
+                    <th>Status</th>
+                    <th>Resource</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for activity in activities %}
+
+                <tr>
+                    <td>
+                        <a href="/web/activities/{{ activity.id }}">
+                            {{ activity.taskno }}
+                        </a>
+                    </td>
+
+                    <td class="nowrap">
+                        {{
+                            activity.est_time.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                        }}
+                    </td>
+
+                    <td>
+                        <a href="/web/activities/{{ activity.id }}">
+                            {{
+                                activity.title
+                                or "(No title)"
+                            }}
+                        </a>
+
+                        {% if activity.criticalact %}
+                        <span class="critical-badge">
+                            Critical
+                        </span>
+                        {% endif %}
+
+                        {% if activity.unplannedact %}
+                        <span class="unplanned-badge">
+                            Unplanned
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {{ activity.environment }}
+                    </td>
+
+                    <td>
+                        {{
+                            activity.subenvironment
+                            or "—"
+                        }}
+                    </td>
+
+                    <td>
+                        <span
+                            class="status status-{{ (
+                                activity.status
+                                or 'none'
+                            )|lower }}"
+                        >
+                            {{
+                                activity.status
+                                or "None"
+                            }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ activity.resource or "—" }}
+                    </td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td
+                        colspan="7"
+                        class="empty-state"
+                    >
+                        No matching activities found.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+
+<div class="pagination">
+    <div>
+        Page {{ page }} of {{ total_pages }}
+    </div>
+
+    <div class="pagination-actions">
+
+        {% if page > 1 %}
+        <a href="?environment={{ selected_environment }}&subenvironment={{ selected_subenvironment }}&status={{ selected_status }}&search={{ search }}&include_deleted={{ include_deleted }}&page={{ page - 1 }}&page_size={{ page_size }}">
+            ← Previous
+        </a>
+        {% endif %}
+
+        {% if page < total_pages %}
+        <a href="?environment={{ selected_environment }}&subenvironment={{ selected_subenvironment }}&status={{ selected_status }}&search={{ search }}&include_deleted={{ include_deleted }}&page={{ page + 1 }}&page_size={{ page_size }}">
+            Next →
+        </a>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

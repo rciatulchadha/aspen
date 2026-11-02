@@ -1,0 +1,119 @@
+.security-status-card {
+    margin-bottom: 22px;
+    padding: 24px;
+
+    background: white;
+
+    border: 1px solid #dce3ec;
+    border-radius: 14px;
+
+    box-shadow:
+        0 8px 24px
+        rgba(18, 38, 63, 0.08);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+}
+
+
+.security-status-card h2 {
+    margin:
+        4px
+        0
+        12px;
+}
+
+
+.security-status-card p {
+    margin:
+        5px
+        0;
+
+    color: #627086;
+}
+
+
+.security-enabled {
+    color: #027a48;
+}
+
+
+.security-disabled {
+    color: #b42318;
+}
+
+
+.security-section {
+    margin-top: 22px;
+}
+
+
+.security-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(200px, 1fr)
+        );
+
+    gap: 18px;
+}
+
+
+.security-username {
+    margin-top: 4px;
+
+    color: #627086;
+    font-size: 12px;
+}
+
+
+.admin-badge,
+.enabled-badge,
+.disabled-badge {
+    display: inline-flex;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+
+.admin-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+
+.enabled-badge {
+    background: #dcfce7;
+    color: #027a48;
+}
+
+
+.disabled-badge {
+    background: #fee2e2;
+    color: #b42318;
+}
+
+
+@media (max-width: 700px) {
+
+    .security-status-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .security-form {
+        grid-template-columns: 1fr;
+    }
+
+}

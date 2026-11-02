@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Daily Tasks
+{% endblock %}
+
+{% block content %}
+
+{% if task_added %}
+
+<div class="alert alert-success">
+    Daily Task created successfully. ASPEN assigned
+    the next available Task Number automatically.
+</div>
+
+{% endif %}
+
+
+{% if task_updated %}
+
+<div class="alert alert-success">
+    Daily Task updated successfully.
+</div>
+
+{% endif %}
+
+
+{% if task_deleted %}
+
+<div class="alert alert-warning">
+    Daily Task was soft deleted. Existing Activities
+    are preserved, but this template will not generate
+    new Activities.
+</div>
+
+{% endif %}
+
+
+{% if task_restored %}
+
+<div class="alert alert-success">
+    Daily Task restored successfully.
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <p class="eyebrow">
+            PRODUCTION CONTROL
+        </p>
+
+        <h1>
+            Daily Tasks
+        </h1>
+
+        <p>
+            {{ "{:,}".format(total_rows) }}
+            matching Daily Task templates
+        </p>
+
+    </div>
+
+
+    <div class="detail-actions">
+
+        <a
+            class="secondary-button"
+            href="/web/production-control"
+        >
+            Generate Schedule
+        </a>
+
+        <a
+            class="primary-button"
+            href="/web/daily-tasks/new"
+        >
+            + Add Daily Task
+        </a>
+
+    </div>
+
+</div>
+
+
+<form
+    method="get"
+    action="/web/daily-tasks"
+    class="filters daily-task-filters extended-daily-task-filters"
+>
+
+    <div class="field">
+
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+        >
+
+            <option value="">
+                All
+            </option>
+
+            {% for value in environments %}
+
+            <option
+                value="{{ value }}"
+                {% if value == selected_environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="schedule_status">
+            Schedule Status
+        </label>
+
+        <select
+            id="schedule_status"
+            name="schedule_status"
+        >
+
+            <option value="">
+                All
+            </option>
+
+            <option
+                value="active"
+                {% if selected_status == "active" %}
+                selected
+                {% endif %}
+            >
+                Active
+            </option>
+
+            <option
+                value="future"
+                {% if selected_status == "future" %}
+                selected
+                {% endif %}
+            >
+                Future
+            </option>
+
+            <option
+                value="expired"
+                {% if selected_status == "expired" %}
+                selected
+                {% endif %}
+            >
+                Expired
+            </option>
+
+            <option
+                value="deleted"
+                {% if selected_status == "deleted" %}
+                selected
+                {% endif %}
+            >
+                Deleted
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="field search-field">
+
+        <label for="search">
+            Search
+        </label>
+
+        <input
+            id="search"
+            name="search"
+            value="{{ search }}"
+            placeholder="Task, title, details, dependency or resource"
+        >
+
+    </div>
+
+
+    <div class="field checkbox-field">
+
+        <label>
+
+            <input
+                type="checkbox"
+                name="include_deleted"
+                value="true"
+                {% if include_deleted %}
+                checked
+                {% endif %}
+            >
+
+            Include deleted
+
+        </label>
+
+    </div>
+
+
+    <div class="filter-actions">
+
+        <button type="submit">
+            Apply Filters
+        </button>
+
+        <a
+            class="secondary-button"
+            href="/web/daily-tasks"
+        >
+            Reset
+        </a>
+
+    </div>
+
+</form>
+
+
+<div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Environment</th>
+                    <th>Weekday</th>
+                    <th>Time</th>
+                    <th>Task</th>
+                    <th>Title</th>
+                    <th>Effective From</th>
+                    <th>Effective To</th>
+                    <th>Status</th>
+                    <th>Resource</th>
+                    <th>Critical</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for row in task_rows %}
+
+                {% set task = row.task %}
+
+                <tr>
+
+                    <td>
+                        {{ task.environment }}
+                    </td>
+
+
+                    <td>
+                        {{ row.weekday_name }}
+                    </td>
+
+
+                    <td class="nowrap">
+                        {{ task.time }}
+                    </td>
+
+
+                    <td>
+
+                        <a
+                            href="/web/daily-tasks/{{ task.serial }}/edit"
+                        >
+                            {{ task.taskno }}
+                        </a>
+
+                    </td>
+
+
+                    <td>
+
+                        <a
+                            href="/web/daily-tasks/{{ task.serial }}/edit"
+                        >
+                            {{ task.title }}
+                        </a>
+
+                    </td>
+
+
+                    <td class="nowrap">
+                        {{ task.effective_from.isoformat() }}
+                    </td>
+
+
+                    <td class="nowrap">
+
+                        {% if task.effective_to %}
+
+                        {{ task.effective_to.isoformat() }}
+
+                        {% else %}
+
+                        Open-ended
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <span
+                            class="schedule-status schedule-status-{{ row.schedule_status|lower }}"
+                        >
+                            {{ row.schedule_status }}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+                        {{ task.resource or "—" }}
+                    </td>
+
+
+                    <td>
+
+                        {% if task.criticalact %}
+
+                        <span class="critical-badge">
+                            Critical
+                        </span>
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <div class="table-actions">
+
+                            <a
+                                class="compact-button"
+                                href="/web/daily-tasks/{{ task.serial }}/edit"
+                            >
+                                Edit
+                            </a>
+
+
+                            {% if task.deleted %}
+
+                            <form
+                                method="post"
+                                action="/web/daily-tasks/{{ task.serial }}/restore"
+                                class="inline-form"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="compact-restore-button"
+                                >
+                                    Restore
+                                </button>
+
+                            </form>
+
+                            {% else %}
+
+                            <form
+                                method="post"
+                                action="/web/daily-tasks/{{ task.serial }}/delete"
+                                class="inline-form"
+                                onsubmit="return confirm(
+                                    'Soft delete this Daily Task? Existing Activities will remain unchanged.'
+                                );"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="compact-danger-button"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td
+                        colspan="11"
+                        class="empty-state"
+                    >
+                        No matching Daily Tasks found.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<div class="pagination">
+
+    <div>
+        Page {{ page }} of {{ total_pages }}
+    </div>
+
+
+    <div class="pagination-actions">
+
+        {% if page > 1 %}
+
+        <a href="?environment={{ selected_environment }}&schedule_status={{ selected_status }}&search={{ search }}&include_deleted={{ include_deleted }}&page={{ page - 1 }}&page_size={{ page_size }}">
+            ← Previous
+        </a>
+
+        {% endif %}
+
+
+        {% if page < total_pages %}
+
+        <a href="?environment={{ selected_environment }}&schedule_status={{ selected_status }}&search={{ search }}&include_deleted={{ include_deleted }}&page={{ page + 1 }}&page_size={{ page_size }}">
+            Next →
+        </a>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

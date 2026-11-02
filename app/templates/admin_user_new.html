@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add ASPEN User
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin/users"
+        >
+            ← Back to User Management
+        </a>
+
+        <p class="eyebrow">
+            USER ADMINISTRATION
+        </p>
+
+        <h1>
+            Add ASPEN User
+        </h1>
+
+        <p>
+            Create a permanent local ASPEN account.
+            The user must change the temporary
+            password during first login.
+        </p>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card user-form-card">
+
+    <form
+        method="post"
+        action="/web/admin/users/new"
+        class="user-form"
+        autocomplete="off"
+    >
+
+        <div class="field">
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                id="username"
+                name="username"
+                maxlength="100"
+                value="{{ form.username if form else '' }}"
+                autocomplete="off"
+                required
+                autofocus
+            >
+
+            <small class="field-help">
+                Example: firstname.lastname
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="display_name">
+                Display Name
+            </label>
+
+            <input
+                id="display_name"
+                name="display_name"
+                maxlength="200"
+                value="{{ form.display_name if form else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="role">
+                ASPEN Role
+            </label>
+
+            <select
+                id="role"
+                name="role"
+                required
+            >
+
+                {% for option in roles %}
+
+                <option
+                    value="{{ option.value }}"
+                    {% if form and form.role == option.value %}
+                    selected
+                    {% endif %}
+                >
+                    {{ option.label }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="role-description">
+
+            <strong>
+                Reader
+            </strong>
+
+            <p>
+                View Activities, Events, Production
+                Control previews, Turnover, MPS and Reports.
+            </p>
+
+
+            <strong>
+                Operator
+            </strong>
+
+            <p>
+                Reader access plus create/update Activities
+                and add Events. No deletion or Daily Tasks.
+            </p>
+
+
+            <strong>
+                Admin
+            </strong>
+
+            <p>
+                Full application, configuration and
+                user-administration access.
+            </p>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="temporary_password">
+                Temporary Password
+            </label>
+
+            <input
+                id="temporary_password"
+                name="temporary_password"
+                type="password"
+                minlength="14"
+                autocomplete="new-password"
+                required
+            >
+
+            <small class="field-help">
+                Minimum 14 characters.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="confirm_password">
+                Confirm Temporary Password
+            </label>
+
+            <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                minlength="14"
+                autocomplete="new-password"
+                required
+            >
+
+        </div>
+
+
+        <div class="alert alert-warning full-form-field">
+
+            The user will be redirected to
+            Change Password immediately after
+            their first successful login.
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <a
+                class="secondary-button"
+                href="/web/admin/users"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                Create User
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

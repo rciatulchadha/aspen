@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Billing FYI
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/reports"
+        >
+            ← Back to Reports
+        </a>
+
+        <p class="eyebrow">
+            BILLING
+        </p>
+
+        <h1>
+            Billing FYI Report
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<form
+    method="get"
+    action="/web/reports/billing"
+    class="report-filters"
+>
+
+    <div class="field">
+
+        <label for="report_date">
+            Report Date / Time
+        </label>
+
+        <input
+            id="report_date"
+            name="report_date"
+            type="datetime-local"
+            value="{{ report_date }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="hour_range">
+            Look-back Hours
+        </label>
+
+        <input
+            id="hour_range"
+            name="hour_range"
+            type="number"
+            min="1"
+            max="168"
+            value="{{ hour_range }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-actions">
+
+        <button type="submit">
+            Run Billing Report
+        </button>
+
+    </div>
+
+</form>
+
+
+{% if report_date %}
+
+<div class="report-summary">
+
+    <strong>
+        {{ rows|length }}
+    </strong>
+
+    Billing records returned.
+
+</div>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Activity</th>
+    <th>Title</th>
+    <th>Status</th>
+    <th>Event / Estimated Time</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+
+        <a
+            href="/web/activities/{{ row.id }}"
+        >
+            {{ row.id }}
+        </a>
+
+    </td>
+
+
+    <td>
+        {{ row.title }}
+    </td>
+
+
+    <td>
+
+        <span
+            class="status status-{{ (
+                row.status
+                or 'none'
+            )|lower }}"
+        >
+            {{ row.status or "None" }}
+        </span>
+
+    </td>
+
+
+    <td class="nowrap">
+
+        {% if row.systimeentered %}
+
+        {{
+            row.systimeentered.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        }}
+
+        {% else %}
+
+        —
+
+        {% endif %}
+
+    </td>
+
+</tr>
+
+
+{% else %}
+
+<tr>
+
+    <td
+        colspan="4"
+        class="empty-state"
+    >
+        No Billing records found.
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

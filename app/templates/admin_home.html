@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Administration
+{% endblock %}
+
+{% block content %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/"
+        >
+            ← Back to Dashboard
+        </a>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            ASPEN Administration
+        </h1>
+
+        <p>
+            Manage application users, security,
+            operational configuration and scheduling
+            settings.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="admin-grid">
+
+
+    <!-- =====================================================
+         USER MANAGEMENT
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/users"
+    >
+
+        <h2>
+            User Management
+        </h2>
+
+        <p>
+            Create and maintain permanent local
+            Reader, Operator and Admin accounts.
+        </p>
+
+        <span>
+            Manage Users →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         SECURITY / EMERGENCY ACCESS
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/security"
+    >
+
+        <h2>
+            Security
+        </h2>
+
+        <p>
+            Manage Emergency Mode, emergency access
+            and protected local security settings.
+        </p>
+
+        <span>
+            Open Security →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         ENVIRONMENTS
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/environments"
+    >
+
+        <h2>
+            Environments
+        </h2>
+
+        <p>
+            Maintain core Environment, Production
+            Control, Operations and sub-environment
+            configuration.
+        </p>
+
+        <span>
+            Manage Environments →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         STATUTORY HOLIDAYS
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/holidays"
+    >
+
+        <h2>
+            Statutory Holidays
+        </h2>
+
+        <p>
+            Maintain holiday dates used by ASPEN
+            scheduling and operational logic.
+        </p>
+
+        <span>
+            Manage Holidays →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         EMAIL SUBSCRIPTIONS
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/email-subscriptions"
+    >
+
+        <h2>
+            Email Subscriptions
+        </h2>
+
+        <p>
+            Configure operational report subscriptions,
+            notification recipients and sender details.
+        </p>
+
+        <span>
+            Manage Subscriptions →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         TEMPLATED ACTIVITIES
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/templates"
+    >
+
+        <h2>
+            Templated Activities
+        </h2>
+
+        <p>
+            Maintain ASPEN task templates used by
+            scheduling, replacement and EOX logic.
+        </p>
+
+        <span>
+            Manage Templates →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         TASK NUMBER CONFIGURATION
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/task-numbers"
+    >
+
+        <h2>
+            Task Numbers
+        </h2>
+
+        <p>
+            Review and update information Task Number
+            configuration by Environment and weekday.
+        </p>
+
+        <span>
+            Manage Task Numbers →
+        </span>
+
+    </a>
+
+
+    <!-- =====================================================
+         STATUS COLOURS
+         ===================================================== -->
+
+    <a
+        class="admin-card"
+        href="/web/admin/status-colours"
+    >
+
+        <h2>
+            Status Colours
+        </h2>
+
+        <p>
+            Configure the status colours displayed
+            in operational reports and ASPEN screens.
+        </p>
+
+        <span>
+            Manage Status Colours →
+        </span>
+
+    </a>
+
+
+</div>
+
+
+<section class="detail-card admin-section">
+
+    <p class="eyebrow">
+        ACCESS CONTROL
+    </p>
+
+    <h2>
+        Administration Access
+    </h2>
+
+    <p class="form-description">
+        Administration functions are restricted to
+        users assigned the ASPEN.Admin role. All user,
+        security and configuration changes are recorded
+        in the ASPEN audit log.
+    </p>
+
+</section>
+
+
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Email Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin"
+        >
+            ← Back to Administration
+        </a>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            Email Subscriptions
+        </h1>
+
+    </div>
+
+</div>
+
+
+<section class="detail-card admin-section">
+
+<h2>
+    Add Subscription
+</h2>
+
+<form
+    method="post"
+    action="/web/admin/email-subscriptions/add"
+    class="admin-form"
+>
+
+    <div class="field">
+
+        <label>
+            Username
+        </label>
+
+        <input
+            name="username"
+            maxlength="100"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            Email Address
+        </label>
+
+        <input
+            name="emailaddress"
+            type="email"
+            maxlength="100"
+            required
+        >
+
+    </div>
+
+
+    <div class="subscription-options full-form-field">
+
+        {% for field, label in [
+            ('v21billingfyi', 'V21 Billing FYI'),
+            ('v21opsdaily', 'V21 Ops Daily'),
+            ('v21opsweekend', 'V21 Ops Weekend'),
+            ('v21spooling', 'V21 Spooling'),
+            ('cableops', 'Cable Ops'),
+            ('nbudrp', 'NBU DRP')
+        ] %}
+
+        <label>
+
+            <input
+                type="checkbox"
+                name="{{ field }}"
+                value="true"
+            >
+
+            {{ label }}
+
+        </label>
+
+        {% endfor %}
+
+    </div>
+
+
+    <div class="form-actions full-form-field">
+
+        <button type="submit">
+            Add Subscription
+        </button>
+
+    </div>
+
+</form>
+
+</section>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>User</th>
+    <th>Email</th>
+    <th>Billing</th>
+    <th>Daily</th>
+    <th>Weekend</th>
+    <th>Spooling</th>
+    <th>Cable</th>
+    <th>NBU DRP</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in subscriptions %}
+
+<tr>
+
+    <td>{{ row.username }}</td>
+    <td>{{ row.emailaddress }}</td>
+
+    <td>{{ "Yes" if row.v21billingfyi else "No" }}</td>
+    <td>{{ "Yes" if row.v21opsdaily else "No" }}</td>
+    <td>{{ "Yes" if row.v21opsweekend else "No" }}</td>
+    <td>{{ "Yes" if row.v21spooling else "No" }}</td>
+    <td>{{ "Yes" if row.cableops else "No" }}</td>
+    <td>{{ "Yes" if row.nbudrp else "No" }}</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<section class="admin-section">
+
+<h2>
+    Sender Configuration
+</h2>
+
+<div class="table-card">
+
+<table>
+
+<thead>
+<tr>
+    <th>Department</th>
+    <th>From Address</th>
+    <th>Signature</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in email_config %}
+
+<tr>
+
+    <td>
+        {{ row.department }}
+    </td>
+
+    <td>
+        {{ row.fromaddress }}
+    </td>
+
+    <td class="preserve-text">
+        {{ row.signature }}
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}
+Access Denied
+{% endblock %}
+
+{% block content %}
+
+<section class="access-denied-card">
+
+    <p class="eyebrow">
+        AUTHORIZATION
+    </p>
+
+    <h1>
+        Access Denied
+    </h1>
+
+    <p>
+        Your ASPEN role does not permit
+        this action.
+    </p>
+
+    <a
+        class="primary-button"
+        href="/"
+    >
+        Return to Dashboard
+    </a>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,175 @@
+.automatic-task-number-note {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+
+    background: #eff6ff;
+    color: #1e3a8a;
+
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+}
+
+
+.automatic-task-number-note p {
+    margin:
+        6px
+        0
+        0;
+
+    color: #475569;
+    line-height: 1.5;
+}
+
+
+.readonly-task-summary {
+    margin-bottom: 24px;
+    padding: 18px;
+
+    background: #f8fafc;
+
+    border: 1px solid #dce3ec;
+    border-radius: 12px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(130px, 1fr)
+        );
+
+    gap: 18px;
+}
+
+
+.readonly-task-summary strong {
+    display: block;
+    margin-top: 6px;
+}
+
+
+.schedule-status {
+    display: inline-flex;
+
+    padding: 5px 10px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 900;
+
+    text-transform: uppercase;
+}
+
+
+.schedule-status-active {
+    background: #dcfce7;
+    color: #027a48;
+}
+
+
+.schedule-status-future {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+
+.schedule-status-expired {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+
+.schedule-status-deleted {
+    background: #fee2e2;
+    color: #b42318;
+}
+
+
+.extended-daily-task-filters {
+    grid-template-columns:
+        minmax(160px, 1fr)
+        minmax(160px, 1fr)
+        minmax(260px, 2fr)
+        minmax(150px, 1fr)
+        auto;
+}
+
+
+.rolling-schedule-card {
+    margin-bottom: 22px;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 24px;
+}
+
+
+.rolling-schedule-card p {
+    max-width: 760px;
+
+    color: #627086;
+    line-height: 1.5;
+}
+
+
+.rolling-schedule-card form {
+    min-width: 280px;
+
+    display: grid;
+    gap: 12px;
+}
+
+
+.summary-warning {
+    color: #b54708 !important;
+}
+
+
+@media (max-width: 1000px) {
+
+    .extended-daily-task-filters {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+
+    .readonly-task-summary {
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+}
+
+
+@media (max-width: 750px) {
+
+    .rolling-schedule-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+
+    .rolling-schedule-card form {
+        min-width: 0;
+        width: 100%;
+    }
+
+
+    .rolling-schedule-card button {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .extended-daily-task-filters,
+    .readonly-task-summary {
+        grid-template-columns: 1fr;
+    }
+
+}

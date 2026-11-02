@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Security Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+
+<div class="alert alert-success">
+    {{ message }}
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            Emergency Access
+        </h1>
+
+        <p>
+            Manage emergency local authentication
+            and temporary Reader / Operator accounts.
+        </p>
+
+    </div>
+
+</div>
+
+
+<section class="security-status-card">
+
+    <div>
+
+        <p class="eyebrow">
+            EMERGENCY MODE
+        </p>
+
+        {% if emergency_mode
+              and emergency_mode.enabled %}
+
+        <h2 class="security-enabled">
+            Enabled
+        </h2>
+
+        <p>
+            Enabled by
+            <strong>
+                {{ emergency_mode.enabled_by }}
+            </strong>
+        </p>
+
+        <p>
+            Expires:
+            <strong>
+                {{
+                    emergency_mode.expires_at.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                }}
+            </strong>
+        </p>
+
+        <p>
+            Reason:
+            {{ emergency_mode.reason }}
+        </p>
+
+        {% else %}
+
+        <h2 class="security-disabled">
+            Disabled
+        </h2>
+
+        <p>
+            Temporary Reader and Operator
+            accounts cannot sign in.
+        </p>
+
+        {% endif %}
+
+    </div>
+
+
+    {% if emergency_mode
+          and emergency_mode.enabled %}
+
+    <form
+        method="post"
+        action="/web/admin/security/emergency-mode/disable"
+    >
+
+        <button
+            type="submit"
+            class="danger-button"
+        >
+            Disable Emergency Mode
+        </button>
+
+    </form>
+
+    {% endif %}
+
+</section>
+
+
+{% if not emergency_mode
+      or not emergency_mode.enabled %}
+
+<section class="detail-card security-section">
+
+    <h2>
+        Enable Emergency Mode
+    </h2>
+
+    <form
+        method="post"
+        action="/web/admin/security/emergency-mode/enable"
+        class="security-form"
+    >
+
+        <div class="field">
+
+            <label for="duration_hours">
+                Duration
+            </label>
+
+            <select
+                id="duration_hours"
+                name="duration_hours"
+                required
+            >
+                <option value="2">2 hours</option>
+                <option value="4">4 hours</option>
+                <option value="8">8 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24">24 hours</option>
+            </select>
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="reason">
+                Reason / Incident Reference
+            </label>
+
+            <textarea
+                id="reason"
+                name="reason"
+                rows="4"
+                required
+            ></textarea>
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <button type="submit">
+                Enable Emergency Mode
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+{% endif %}
+
+
+{% if emergency_mode
+      and emergency_mode.enabled %}
+
+<section class="detail-card security-section">
+
+    <h2>
+        Create Temporary User
+    </h2>
+
+
+    <form
+        method="post"
+        action="/web/admin/security/users/create"
+        class="security-form"
+        autocomplete="off"
+    >
+
+        <div class="field">
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                id="username"
+                name="username"
+                maxlength="100"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="display_name">
+                Display Name
+            </label>
+
+            <input
+                id="display_name"
+                name="display_name"
+                maxlength="200"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="role">
+                Role
+            </label>
+
+            <select
+                id="role"
+                name="role"
+                required
+            >
+                <option value="ASPEN.Reader">
+                    Reader
+                </option>
+
+                <option value="ASPEN.Operator">
+                    Operator
+                </option>
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="expiry_hours">
+                Account Duration
+            </label>
+
+            <select
+                id="expiry_hours"
+                name="expiry_hours"
+                required
+            >
+                <option value="2">2 hours</option>
+                <option value="4">4 hours</option>
+                <option value="8">8 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24">24 hours</option>
+            </select>
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="password">
+                Temporary Password
+            </label>
+
+            <input
+                id="password"
+                name="password"
+                type="password"
+                minlength="14"
+                autocomplete="new-password"
+                required
+            >
+
+            <small class="field-help">
+                Minimum 14 characters.
+            </small>
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <button type="submit">
+                Create Temporary User
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+{% endif %}
+
+
+<section class="security-section">
+
+    <div class="section-heading">
+
+        <div>
+
+            <p class="eyebrow">
+                LOCAL ACCOUNTS
+            </p>
+
+            <h2>
+                ASPEN Local Users
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-card">
+
+        <div class="table-scroll">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Last Login</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                {% for user in users %}
+
+                    <tr>
+
+                        <td>
+
+                            <strong>
+                                {{ user.display_name }}
+                            </strong>
+
+                            <div class="security-username">
+                                {{ user.username }}
+                            </div>
+
+                        </td>
+
+
+                        <td>
+                            {{ user.role }}
+                        </td>
+
+
+                        <td>
+
+                            {% if user.emergency_admin %}
+
+                            <span class="admin-badge">
+                                Emergency Admin
+                            </span>
+
+                            {% else %}
+
+                            Temporary
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if user.enabled %}
+
+                            <span class="enabled-badge">
+                                Enabled
+                            </span>
+
+                            {% else %}
+
+                            <span class="disabled-badge">
+                                Disabled
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td class="nowrap">
+
+                            {% if user.expires_at %}
+
+                            {{
+                                user.expires_at.strftime(
+                                    "%Y-%m-%d %H:%M"
+                                )
+                            }}
+
+                            {% else %}
+
+                            Never
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td class="nowrap">
+
+                            {% if user.last_login_at %}
+
+                            {{
+                                user.last_login_at.strftime(
+                                    "%Y-%m-%d %H:%M"
+                                )
+                            }}
+
+                            {% else %}
+
+                            Never
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if not user.emergency_admin %}
+
+                                {% if user.enabled %}
+
+                                <form
+                                    method="post"
+                                    action="/web/admin/security/users/{{ user.id }}/disable"
+                                    class="inline-form"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="compact-danger-button"
+                                    >
+                                        Disable
+                                    </button>
+
+                                </form>
+
+                                {% else %}
+
+                                <form
+                                    method="post"
+                                    action="/web/admin/security/users/{{ user.id }}/enable"
+                                    class="inline-form"
+                                >
+
+                                    <button
+                                        type="submit"
+                                        class="compact-restore-button"
+                                    >
+                                        Enable
+                                    </button>
+
+                                </form>
+
+                                {% endif %}
+
+                            {% else %}
+
+                            Protected
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

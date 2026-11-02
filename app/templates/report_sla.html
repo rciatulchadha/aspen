@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN SLA Exceptions
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/reports"
+        >
+            ← Back to Reports
+        </a>
+
+        <p class="eyebrow">
+            SLA REPORTING
+        </p>
+
+        <h1>
+            SLA Exceptions
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<form
+    method="get"
+    action="/web/reports/sla"
+    class="report-filters"
+>
+
+    <div class="field">
+
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+            required
+        >
+
+            <option value="">
+                Select environment
+            </option>
+
+            {% for value in environments %}
+
+            <option
+                value="{{ value }}"
+                {% if value == environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="report_date">
+            Report Date
+        </label>
+
+        <input
+            id="report_date"
+            name="report_date"
+            type="date"
+            value="{{ report_date }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="task_prefix">
+            Task Prefix
+        </label>
+
+        <input
+            id="task_prefix"
+            name="task_prefix"
+            maxlength="1"
+            value="{{ task_prefix }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="difference">
+            SLA Difference (minutes)
+        </label>
+
+        <input
+            id="difference"
+            name="difference"
+            type="number"
+            min="0"
+            value="{{ difference }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-actions">
+
+        <button type="submit">
+            Run SLA Report
+        </button>
+
+    </div>
+
+</form>
+
+
+{% if environment and report_date %}
+
+<div class="report-summary">
+
+    <strong>
+        {{ rows|length }}
+    </strong>
+
+    SLA exceptions returned.
+
+</div>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Task</th>
+    <th>Title</th>
+    <th>Estimated Time</th>
+    <th>First Event</th>
+    <th>Status</th>
+    <th>Difference</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+
+        <a
+            href="/web/activities/{{ row.id }}"
+        >
+            {{ row.taskno }}
+        </a>
+
+    </td>
+
+
+    <td>
+        {{ row.title }}
+    </td>
+
+
+    <td class="nowrap">
+
+        {{
+            row.est_time.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        }}
+
+    </td>
+
+
+    <td class="nowrap">
+
+        {{
+            row.firstevent.strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        }}
+
+    </td>
+
+
+    <td>
+        {{ row.status }}
+    </td>
+
+
+    <td>
+
+        <span class="sla-difference">
+            {{ row.difference }}
+            min
+        </span>
+
+    </td>
+
+</tr>
+
+
+{% else %}
+
+<tr>
+
+    <td
+        colspan="6"
+        class="empty-state"
+    >
+        No SLA exceptions found.
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

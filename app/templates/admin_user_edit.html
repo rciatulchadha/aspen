@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit ASPEN User
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin/users"
+        >
+            ← Back to User Management
+        </a>
+
+        <p class="eyebrow">
+            USER ADMINISTRATION
+        </p>
+
+        <h1>
+            Edit User
+        </h1>
+
+        <p>
+            {{ managed_user.username }}
+        </p>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card user-form-card">
+
+    <div class="readonly-task-summary">
+
+        <div>
+
+            <span class="summary-label">
+                Username
+            </span>
+
+            <strong>
+                {{ managed_user.username }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Status
+            </span>
+
+            <strong>
+                {{
+                    "Enabled"
+                    if managed_user.enabled
+                    else "Disabled"
+                }}
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Last Login
+            </span>
+
+            <strong>
+
+                {% if managed_user.last_login_at %}
+
+                {{
+                    managed_user.last_login_at.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                }}
+
+                {% else %}
+
+                Never
+
+                {% endif %}
+
+            </strong>
+
+        </div>
+
+
+        <div>
+
+            <span class="summary-label">
+                Password Status
+            </span>
+
+            <strong>
+
+                {% if managed_user.must_change_password %}
+                    Change Required
+                {% else %}
+                    Current
+                {% endif %}
+
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/web/admin/users/{{ managed_user.id }}/edit"
+        class="user-form"
+    >
+
+        <div class="field">
+
+            <label for="display_name">
+                Display Name
+            </label>
+
+            <input
+                id="display_name"
+                name="display_name"
+                maxlength="200"
+                value="{{ managed_user.display_name }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="role">
+                ASPEN Role
+            </label>
+
+            <select
+                id="role"
+                name="role"
+                required
+            >
+
+                {% for option in roles %}
+
+                <option
+                    value="{{ option.value }}"
+                    {% if managed_user.role == option.value %}
+                    selected
+                    {% endif %}
+                >
+                    {{ option.label }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <a
+                class="secondary-button"
+                href="/web/admin/users"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                Save Changes
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

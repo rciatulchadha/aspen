@@ -1,0 +1,178 @@
+name: ASPEN CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "ASPEN image version"
+        required: true
+        default: "0.1.0"
+
+  push:
+    branches:
+      - main
+
+env:
+  QUAY_REGISTRY: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com
+  QUAY_IMAGE: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen
+
+jobs:
+
+  build:
+
+    runs-on:
+      - self-hosted
+
+    permissions:
+      contents: read
+
+    steps:
+
+      # ------------------------------------------------------
+      # CHECKOUT
+      # ------------------------------------------------------
+
+      - name: Checkout ASPEN
+        uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # ENVIRONMENT VALIDATION
+      # ------------------------------------------------------
+
+      - name: Runner information
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Commit : ${GITHUB_SHA}"
+          echo "Branch : ${GITHUB_REF_NAME}"
+
+          python --version
+          podman --version
+
+
+      # ------------------------------------------------------
+      # PYTHON VALIDATION
+      # ------------------------------------------------------
+
+      - name: Compile ASPEN
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m compileall app scripts
+
+
+      # ------------------------------------------------------
+      # DETERMINE IMAGE TAG
+      # ------------------------------------------------------
+
+      - name: Determine image tag
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+              IMAGE_TAG="${{ github.event.inputs.version }}"
+          else
+              IMAGE_TAG="${GITHUB_SHA}"
+          fi
+
+          echo "tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+
+          echo "Image:"
+          echo "${QUAY_IMAGE}:${IMAGE_TAG}"
+
+
+      # ------------------------------------------------------
+      # CONTAINER BUILD
+      # ------------------------------------------------------
+
+      - name: Build ASPEN container
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman build \
+            --pull \
+            -f Containerfile \
+            -t "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
+            .
+
+
+      # ------------------------------------------------------
+      # DEPENDENCY VALIDATION
+      # ------------------------------------------------------
+
+      - name: Validate container dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman run \
+            --rm \
+            --entrypoint python \
+            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
+            -c "import fastapi, sqlalchemy, psycopg, jinja2, pwdlib; print('ASPEN container dependencies OK')"
+
+
+      # ------------------------------------------------------
+      # APPLICATION IMPORT VALIDATION
+      # ------------------------------------------------------
+
+      - name: Validate ASPEN application
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman run \
+            --rm \
+            -e VSR_DATABASE_URL="postgresql+psycopg://test:test@localhost:5432/test" \
+            -e VSR_SESSION_SECRET="github-build-validation-only" \
+            -e VSR_LOCAL_AUTH_ENABLED="true" \
+            -e VSR_SESSION_IDLE_MINUTES="120" \
+            --entrypoint python \
+            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
+            -c "from app.main import app; print('ASPEN application import OK')"
+
+
+      # ------------------------------------------------------
+      # QUAY LOGIN
+      # ------------------------------------------------------
+
+      - name: Login to Red Hat Quay
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          printf '%s' '${{ secrets.QUAY_TOKEN }}' |
+            podman login \
+              --username '${{ secrets.QUAY_USERNAME }}' \
+              --password-stdin \
+              "${QUAY_REGISTRY}"
+
+
+      # ------------------------------------------------------
+      # PUSH
+      # ------------------------------------------------------
+
+      - name: Push ASPEN image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman push \
+            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+
+
+      # ------------------------------------------------------
+      # LOGOUT
+      # ------------------------------------------------------
+
+      - name: Logout from Quay
+        if: always()
+        shell: bash
+        run: |
+          podman logout "${QUAY_REGISTRY}" || true

@@ -1,0 +1,29 @@
+.env
+*.key
+*.pem
+*.p12
+*.pfx
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# IDE
+.vscode/
+.idea/
+
+# Logs / temporary
+*.log
+*.tmp
+*.out
+
+# OS
+.DS_Store
+Thumbs.db
+

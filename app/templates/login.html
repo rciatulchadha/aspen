@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        ASPEN Sign In
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/aspen.css'
+        ) }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/security.css'
+        ) }}"
+    >
+
+</head>
+
+
+<body class="login-page">
+
+<main class="login-shell">
+
+    <section class="login-brand">
+
+        <p class="eyebrow">
+            WORKLOAD AUTOMATION
+        </p>
+
+        <h1>
+            ASPEN
+        </h1>
+
+        <p>
+            Operations Scheduler
+        </p>
+
+    </section>
+
+
+    <section class="login-card">
+
+        <h2>
+            Emergency Local Access
+        </h2>
+
+        <p class="login-description">
+            Use this login only when Microsoft
+            Entra SSO is unavailable or during
+            approved emergency access testing.
+        </p>
+
+
+        {% if error %}
+
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        {% if local_auth_enabled %}
+
+        <form
+            method="post"
+            action="/login"
+            class="login-form"
+        >
+
+            <div class="field">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input
+                    id="username"
+                    name="username"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+            </div>
+
+
+            <button type="submit">
+                Sign In
+            </button>
+
+        </form>
+
+        {% else %}
+
+        <div class="alert alert-warning">
+            Local emergency authentication
+            is disabled.
+        </div>
+
+        {% endif %}
+
+
+        <p class="login-warning">
+            Access attempts are recorded in
+            the ASPEN audit log.
+        </p>
+
+    </section>
+
+</main>
+
+</body>
+
+</html>

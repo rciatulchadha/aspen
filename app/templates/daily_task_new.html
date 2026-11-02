@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add Daily Task
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/daily-tasks"
+        >
+            ← Back to Daily Tasks
+        </a>
+
+        <p class="eyebrow">
+            PRODUCTION CONTROL
+        </p>
+
+        <h1>
+            Add Daily Task
+        </h1>
+
+        <p>
+            Create a recurring ASPEN Daily Task.
+            ASPEN will assign the next available
+            Task Number automatically.
+        </p>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+    <div class="automatic-task-number-note">
+
+        <strong>
+            Automatic Task Number
+        </strong>
+
+        <p>
+            Select the Environment and Schedule.
+            ASPEN will assign the lowest available
+            valid Task Number automatically.
+        </p>
+
+        <ul>
+            <li>
+                Every Day uses the available
+                range from 7 through 99.
+            </li>
+
+            <li>
+                Monday through Sunday use the
+                appropriate weekday Task Number range.
+            </li>
+        </ul>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/web/daily-tasks/new"
+        class="activity-form"
+    >
+
+        <div class="field">
+
+            <label for="environment">
+                Environment
+            </label>
+
+            <select
+                id="environment"
+                name="environment"
+                required
+            >
+
+                <option value="">
+                    Select environment
+                </option>
+
+                {% for value in environments %}
+
+                <option
+                    value="{{ value }}"
+                    {% if form and form.environment == value %}
+                    selected
+                    {% endif %}
+                >
+                    {{ value }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="weekday">
+                Schedule
+            </label>
+
+            <select
+                id="weekday"
+                name="weekday"
+                required
+            >
+
+                <option value="">
+                    Select schedule
+                </option>
+
+                {% for weekday in weekdays %}
+
+                <option
+                    value="{{ weekday.number }}"
+                    {% if form and form.weekday == weekday.number %}
+                    selected
+                    {% endif %}
+                >
+                    {{ weekday.name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <small class="field-help">
+                Every Day generates an Activity for each
+                eligible schedule date. A weekday option
+                generates an Activity only on that weekday.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="effective_from">
+                Effective From
+            </label>
+
+            <input
+                id="effective_from"
+                name="effective_from"
+                type="date"
+                value="{% if form %}{{ form.effective_from }}{% else %}{{ today }}{% endif %}"
+                required
+            >
+
+            <small class="field-help">
+                First schedule date on which this
+                Daily Task can generate an Activity.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="effective_to">
+                Effective To
+            </label>
+
+            <input
+                id="effective_to"
+                name="effective_to"
+                type="date"
+                value="{{ form.effective_to if form else '' }}"
+            >
+
+            <small class="field-help">
+                Optional. Leave blank for an
+                open-ended recurring Daily Task.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="time">
+                Scheduled Time
+            </label>
+
+            <input
+                id="time"
+                name="time"
+                type="time"
+                value="{{ form.time if form else '' }}"
+                required
+            >
+
+            <small class="field-help">
+                Use the 24-hour schedule time.
+            </small>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="subenvironment">
+                Sub-environment
+            </label>
+
+            <input
+                id="subenvironment"
+                name="subenvironment"
+                maxlength="25"
+                value="{{ form.subenvironment if form else '' }}"
+            >
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="title">
+                Title
+            </label>
+
+            <input
+                id="title"
+                name="title"
+                maxlength="255"
+                value="{{ form.title if form else '' }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="details">
+                Details
+            </label>
+
+            <textarea
+                id="details"
+                name="details"
+                rows="7"
+                required
+            >{{ form.details if form else '' }}</textarea>
+
+        </div>
+
+
+        <div class="field full-form-field">
+
+            <label for="note">
+                Notes
+            </label>
+
+            <textarea
+                id="note"
+                name="note"
+                rows="4"
+            >{{ form.note if form else '' }}</textarea>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="dependency">
+                Dependency
+            </label>
+
+            <input
+                id="dependency"
+                name="dependency"
+                maxlength="100"
+                value="{{ form.dependency if form else '' }}"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="resource">
+                Resource
+            </label>
+
+            <input
+                id="resource"
+                name="resource"
+                maxlength="20"
+                value="{{ form.resource if form else '' }}"
+            >
+
+        </div>
+
+
+        <div class="field checkbox-field">
+
+            <label>
+
+                <input
+                    type="checkbox"
+                    name="criticalact"
+                    value="true"
+                    {% if form and form.criticalact %}
+                    checked
+                    {% endif %}
+                >
+
+                Critical Activity
+
+            </label>
+
+        </div>
+
+
+        <div class="form-actions full-form-field">
+
+            <a
+                class="secondary-button"
+                href="/web/daily-tasks"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                Create Daily Task
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<script>
+(function () {
+    const effectiveFrom =
+        document.getElementById(
+            "effective_from"
+        );
+
+    const effectiveTo =
+        document.getElementById(
+            "effective_to"
+        );
+
+    function updateMinimumEndDate() {
+        if (!effectiveFrom.value) {
+            effectiveTo.removeAttribute(
+                "min"
+            );
+
+            return;
+        }
+
+        effectiveTo.min =
+            effectiveFrom.value;
+
+        if (
+            effectiveTo.value
+            && effectiveTo.value
+                < effectiveFrom.value
+        ) {
+            effectiveTo.value = "";
+        }
+    }
+
+    effectiveFrom.addEventListener(
+        "change",
+        updateMinimumEndDate
+    );
+
+    updateMinimumEndDate();
+})();
+</script>
+
+{% endblock %}

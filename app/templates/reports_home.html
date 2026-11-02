@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Reports
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <p class="eyebrow">
+            REPORTING
+        </p>
+
+        <h1>
+            ASPEN Reports
+        </h1>
+
+        <p>
+            Operational and historical reporting
+            using the migrated VSR business logic.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="report-grid">
+
+    <a
+        class="report-card"
+        href="/web/reports/rocc"
+    >
+        <span class="report-icon">
+            ROCC
+        </span>
+
+        <h2>
+            Operations Report
+        </h2>
+
+        <p>
+            Activity and Event reporting by
+            environment and date range.
+        </p>
+
+        <strong>
+            Open Report →
+        </strong>
+    </a>
+
+
+    <a
+        class="report-card"
+        href="/web/reports/archive"
+    >
+        <span class="report-icon">
+            ARC
+        </span>
+
+        <h2>
+            Archive Report
+        </h2>
+
+        <p>
+            Search migrated historical
+            Activities and Events.
+        </p>
+
+        <strong>
+            Open Report →
+        </strong>
+    </a>
+
+
+    <a
+        class="report-card"
+        href="/web/reports/sreq"
+    >
+        <span class="report-icon">
+            SR
+        </span>
+
+        <h2>
+            SREQ Report
+        </h2>
+
+        <p>
+            SREQ-focused operational and
+            archive reporting.
+        </p>
+
+        <strong>
+            Open Report →
+        </strong>
+    </a>
+
+
+    <a
+        class="report-card"
+        href="/web/reports/billing"
+    >
+        <span class="report-icon">
+            FYI
+        </span>
+
+        <h2>
+            Billing FYI
+        </h2>
+
+        <p>
+            Billing Activity reporting over
+            a configurable time window.
+        </p>
+
+        <strong>
+            Open Report →
+        </strong>
+    </a>
+
+
+    <a
+        class="report-card"
+        href="/web/reports/sla"
+    >
+        <span class="report-icon">
+            SLA
+        </span>
+
+        <h2>
+            SLA Exceptions
+        </h2>
+
+        <p>
+            Identify Activities exceeding
+            the configured SLA difference.
+        </p>
+
+        <strong>
+            Open Report →
+        </strong>
+    </a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}
+Edit Activity {{ activity.taskno }}
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <a
+            class="back-link"
+            href="/web/activities/{{ activity.id }}"
+        >
+            ← Back to Activity
+        </a>
+
+        <p class="eyebrow">
+            ACTIVITY {{ activity.id }}
+        </p>
+
+        <h1>Edit Activity</h1>
+    </div>
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+<form
+    method="post"
+    action="/web/activities/{{ activity.id }}/edit"
+    class="activity-form"
+>
+
+    <div class="field">
+        <label for="taskno">
+            Task Number
+        </label>
+
+        <input
+            id="taskno"
+            name="taskno"
+            type="number"
+            value="{{ activity.taskno }}"
+            required
+        >
+    </div>
+
+
+    <div class="field">
+        <label for="est_time">
+            Estimated Time
+        </label>
+
+        <input
+            id="est_time"
+            name="est_time"
+            type="datetime-local"
+            value="{{ activity.est_time.strftime('%Y-%m-%dT%H:%M') }}"
+            required
+        >
+    </div>
+
+
+    <div class="field">
+        <label for="status">
+            Status
+        </label>
+
+        <select
+            id="status"
+            name="status"
+        >
+            {% for value in statuses %}
+
+            <option
+                value="{{ value }}"
+                {% if value == activity.status %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+        </select>
+    </div>
+
+
+    <div class="field">
+        <label for="closed">
+            Closed
+        </label>
+
+        <select
+            id="closed"
+            name="closed"
+        >
+            <option
+                value="No"
+                {% if activity.closed != "Yes" %}
+                selected
+                {% endif %}
+            >
+                No
+            </option>
+
+            <option
+                value="Yes"
+                {% if activity.closed == "Yes" %}
+                selected
+                {% endif %}
+            >
+                Yes
+            </option>
+        </select>
+    </div>
+
+
+    <div class="field">
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+            required
+        >
+            {% for value in environments %}
+
+            <option
+                value="{{ value }}"
+                {% if value == activity.environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+        </select>
+    </div>
+
+
+    <div class="field">
+        <label for="subenvironment">
+            Sub-environment
+        </label>
+
+        <input
+            id="subenvironment"
+            name="subenvironment"
+            maxlength="25"
+            value="{{ activity.subenvironment or '' }}"
+        >
+    </div>
+
+
+    <div class="field full-form-field">
+        <label for="title">
+            Title
+        </label>
+
+        <input
+            id="title"
+            name="title"
+            maxlength="500"
+            value="{{ activity.title or '' }}"
+            required
+        >
+    </div>
+
+
+    <div class="field full-form-field">
+        <label for="details">
+            Details
+        </label>
+
+        <textarea
+            id="details"
+            name="details"
+            rows="7"
+            required
+        >{{ activity.details or '' }}</textarea>
+    </div>
+
+
+    <div class="field full-form-field">
+        <label for="note">
+            Notes
+        </label>
+
+        <textarea
+            id="note"
+            name="note"
+            rows="5"
+        >{{ activity.note or '' }}</textarea>
+    </div>
+
+
+    <div class="field">
+        <label for="dependency">
+            Dependency
+        </label>
+
+        <input
+            id="dependency"
+            name="dependency"
+            maxlength="50"
+            value="{{ activity.dependency or '' }}"
+        >
+    </div>
+
+
+    <div class="field">
+        <label for="resource">
+            Resource
+        </label>
+
+        <input
+            id="resource"
+            name="resource"
+            maxlength="50"
+            value="{{ activity.resource or '' }}"
+        >
+    </div>
+
+
+    <div class="field">
+        <label for="approved">
+            Approved
+        </label>
+
+        <input
+            id="approved"
+            name="approved"
+            maxlength="50"
+            value="{{ activity.approved or '' }}"
+        >
+    </div>
+
+
+    <div class="field checkbox-field">
+        <label>
+            <input
+                type="checkbox"
+                name="criticalact"
+                value="true"
+                {% if activity.criticalact %}
+                checked
+                {% endif %}
+            >
+
+            Critical Activity
+        </label>
+    </div>
+
+
+    <div class="form-actions full-form-field">
+
+        <a
+            class="secondary-button"
+            href="/web/activities/{{ activity.id }}"
+        >
+            Cancel
+        </a>
+
+        <button type="submit">
+            Save Changes
+        </button>
+
+    </div>
+
+</form>
+
+</section>
+
+{% endblock %}

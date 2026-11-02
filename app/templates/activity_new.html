@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add ASPEN Activity
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+    <div>
+        <a
+            class="back-link"
+            href="/web/activities"
+        >
+            ← Back to Activities
+        </a>
+
+        <p class="eyebrow">
+            OPERATIONS
+        </p>
+
+        <h1>Add Activity</h1>
+
+        <p>
+            Create a new ASPEN operational Activity.
+        </p>
+    </div>
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+    <form
+        method="post"
+        action="/web/activities/new"
+        class="activity-form"
+    >
+
+        <div class="field">
+            <label for="taskno">
+                Task Number
+            </label>
+
+            <input
+                id="taskno"
+                name="taskno"
+                type="number"
+                value="{{ form.taskno if form else '' }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="est_time">
+                Estimated Time
+            </label>
+
+            <input
+                id="est_time"
+                name="est_time"
+                type="datetime-local"
+                value="{{ form.est_time if form else '' }}"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="environment">
+                Environment
+            </label>
+
+            <select
+                id="environment"
+                name="environment"
+                required
+            >
+                <option value="">
+                    Select environment
+                </option>
+
+                {% for environment in environments %}
+
+                <option
+                    value="{{ environment }}"
+                    {% if form and form.environment == environment %}
+                    selected
+                    {% endif %}
+                >
+                    {{ environment }}
+                </option>
+
+                {% endfor %}
+            </select>
+        </div>
+
+
+        <div class="field">
+            <label for="subenvironment">
+                Sub-environment
+            </label>
+
+            <input
+                id="subenvironment"
+                name="subenvironment"
+                maxlength="25"
+                value="{{ form.subenvironment if form else '' }}"
+            >
+        </div>
+
+
+        <div class="field full-form-field">
+            <label for="title">
+                Title
+            </label>
+
+            <input
+                id="title"
+                name="title"
+                maxlength="500"
+                value="{{ form.title if form else '' }}"
+                required
+            >
+        </div>
+
+
+        <div class="field full-form-field">
+            <label for="details">
+                Details
+            </label>
+
+            <textarea
+                id="details"
+                name="details"
+                rows="6"
+                required
+            >{{ form.details if form else '' }}</textarea>
+        </div>
+
+
+        <div class="field full-form-field">
+            <label for="note">
+                Notes
+            </label>
+
+            <textarea
+                id="note"
+                name="note"
+                rows="4"
+            >{{ form.note if form else '' }}</textarea>
+        </div>
+
+
+        <div class="field">
+            <label for="dependency">
+                Dependency
+            </label>
+
+            <input
+                id="dependency"
+                name="dependency"
+                maxlength="50"
+                value="{{ form.dependency if form else '' }}"
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="resource">
+                Resource
+            </label>
+
+            <input
+                id="resource"
+                name="resource"
+                maxlength="50"
+                value="{{ form.resource if form else '' }}"
+            >
+        </div>
+
+
+        <div class="field">
+            <label for="username">
+                Operator
+            </label>
+
+            <input
+                id="username"
+                name="username"
+                maxlength="50"
+                autocomplete="username"
+                value="{{ form.username if form else '' }}"
+                required
+            >
+        </div>
+
+
+        <div class="form-actions full-form-field">
+            <a
+                class="secondary-button"
+                href="/web/activities"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                Create Activity
+            </button>
+        </div>
+
+    </form>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Turnover MPS
+{% endblock %}
+
+{% block content %}
+
+
+{% if mps_added %}
+
+<div class="alert alert-success">
+    Turnover MPS created successfully.
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/turnover"
+        >
+            ← Back to Turnover
+        </a>
+
+        <p class="eyebrow">
+            TURNOVER
+        </p>
+
+        <h1>
+            Mainframe Production Status
+        </h1>
+
+    </div>
+
+
+    <a
+        class="primary-button"
+        href="/web/turnover/mps/new"
+    >
+        + Add MPS
+    </a>
+
+</div>
+
+
+{% if current_mps %}
+
+<section class="mps-current-card">
+
+    <div class="mps-current-header">
+
+        <div>
+
+            <p class="eyebrow">
+                CURRENT MPS
+            </p>
+
+            <h2>
+                {{ current_mps.mpsconfiguration }}
+            </h2>
+
+        </div>
+
+
+        <div class="mps-time">
+
+            <span>
+                MPUP / APPGD
+            </span>
+
+            <strong>
+                {{ current_mps.mpupappgdtime }}
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <div class="mps-grid">
+
+        <article>
+
+            <span>PREMAF 1</span>
+
+            <strong>
+                {{ current_mps.premaf1 }}
+            </strong>
+
+        </article>
+
+
+        <article>
+
+            <span>PREMAF 4</span>
+
+            <strong>
+                {{ current_mps.premaf4 }}
+            </strong>
+
+        </article>
+
+
+        <article>
+
+            <span>Ciber</span>
+
+            <strong>
+                {{ current_mps.ciberline1 }}
+            </strong>
+
+            <small>
+                {{ current_mps.ciberline2 }}
+            </small>
+
+        </article>
+
+    </div>
+
+
+    <div class="mps-cycles">
+
+        <h3>
+            Current Cycles
+        </h3>
+
+        {% for cycle in current_cycles %}
+
+        <span class="cycle-badge">
+            {{ cycle.cycledetails }}
+        </span>
+
+        {% else %}
+
+        <span class="muted">
+            No cycles recorded.
+        </span>
+
+        {% endfor %}
+
+    </div>
+
+</section>
+
+{% endif %}
+
+
+<section class="history-section">
+
+    <div class="section-heading">
+
+        <div>
+
+            <p class="eyebrow">
+                HISTORY
+            </p>
+
+            <h2>
+                Recent MPS Records
+            </h2>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Collections</th>
+                    <th>Main Drivers</th>
+                    <th>Guiders</th>
+                    <th>MPUP/APPGD</th>
+                    <th>PREMAF 1</th>
+                    <th>PREMAF 4</th>
+                    <th>Cycles</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            {% for row in history %}
+
+                <tr>
+
+                    <td>
+                        {{ row.id }}
+                    </td>
+
+                    <td>
+                        {{ row.collections }}
+                    </td>
+
+                    <td>
+                        {{ row.maindrivers }}
+                    </td>
+
+                    <td>
+                        {{ row.guiders }}
+                    </td>
+
+                    <td class="nowrap">
+
+                        {% if row.mpupappgdtime %}
+
+                        {{
+                            row.mpupappgdtime.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                        }}
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+                        {{ row.premaf1status or "—" }}
+                    </td>
+
+                    <td>
+                        {{ row.premaf4status or "—" }}
+                    </td>
+
+                    <td>
+                        {{ row.cycle_count }}
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}
+Add Turnover MPS
+{% endblock %}
+
+{% block content %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/turnover/mps"
+        >
+            ← Back to MPS
+        </a>
+
+        <p class="eyebrow">
+            TURNOVER
+        </p>
+
+        <h1>
+            Add Mainframe Production Status
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<section class="detail-card">
+
+<form
+    method="post"
+    action="/web/turnover/mps/new"
+    class="mps-form"
+>
+
+    <div class="field">
+
+        <label for="collections">
+            Collections
+        </label>
+
+        <input
+            id="collections"
+            name="collections"
+            type="number"
+            min="0"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="maindrivers">
+            Main Drivers
+        </label>
+
+        <input
+            id="maindrivers"
+            name="maindrivers"
+            type="number"
+            min="0"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="guiders">
+            Guiders
+        </label>
+
+        <input
+            id="guiders"
+            name="guiders"
+            type="number"
+            min="0"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="mpupappgdtime">
+            MPUP / APPGD Time
+        </label>
+
+        <input
+            id="mpupappgdtime"
+            name="mpupappgdtime"
+            type="datetime-local"
+            required
+        >
+
+    </div>
+
+
+    <div class="field full-form-field">
+        <h3>Cycles</h3>
+    </div>
+
+
+    {% for number in range(1, 7) %}
+
+    <div class="field">
+
+        <label for="cycle{{ number }}">
+            Cycle {{ number }}
+            {% if number == 1 %}
+            *
+            {% endif %}
+        </label>
+
+        <input
+            id="cycle{{ number }}"
+            name="cycle{{ number }}"
+            maxlength="150"
+            {% if number == 1 %}
+            required
+            {% endif %}
+        >
+
+    </div>
+
+    {% endfor %}
+
+
+    <div class="field full-form-field">
+        <h3>PREMAF</h3>
+    </div>
+
+
+    <div class="field">
+
+        <label for="premaf1date">
+            PREMAF 1 Date
+        </label>
+
+        <input
+            id="premaf1date"
+            name="premaf1date"
+            type="datetime-local"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="premaf1status">
+            PREMAF 1 Status
+        </label>
+
+        <input
+            id="premaf1status"
+            name="premaf1status"
+            maxlength="100"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="premaf4date">
+            PREMAF 4 Date
+        </label>
+
+        <input
+            id="premaf4date"
+            name="premaf4date"
+            type="datetime-local"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="premaf4status">
+            PREMAF 4 Status
+        </label>
+
+        <input
+            id="premaf4status"
+            name="premaf4status"
+            maxlength="100"
+        >
+
+    </div>
+
+
+    <div class="field full-form-field">
+        <h3>Ciber VOLSER</h3>
+    </div>
+
+
+    <div class="field">
+
+        <label for="volser1">
+            VOLSER 1
+        </label>
+
+        <input
+            id="volser1"
+            name="volser1"
+            maxlength="7"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="volser2">
+            VOLSER 2
+        </label>
+
+        <input
+            id="volser2"
+            name="volser2"
+            maxlength="7"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="volser3">
+            VOLSER 3
+        </label>
+
+        <input
+            id="volser3"
+            name="volser3"
+            maxlength="7"
+        >
+
+    </div>
+
+
+    <div class="form-actions full-form-field">
+
+        <a
+            class="secondary-button"
+            href="/web/turnover/mps"
+        >
+            Cancel
+        </a>
+
+        <button type="submit">
+            Create MPS
+        </button>
+
+    </div>
+
+</form>
+
+</section>
+
+{% endblock %}

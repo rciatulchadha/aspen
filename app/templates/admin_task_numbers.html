@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Task Number Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+<div>
+
+    <a
+        class="back-link"
+        href="/web/admin"
+    >
+        ← Back to Administration
+    </a>
+
+    <p class="eyebrow">
+        ADMINISTRATION
+    </p>
+
+    <h1>
+        Task Number Configuration
+    </h1>
+
+</div>
+
+</div>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+<tr>
+    <th>Environment</th>
+    <th>Weekday</th>
+    <th>Current Task Number</th>
+    <th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+        {{ row.environment }}
+    </td>
+
+    <td>
+        {{ row.weekday }}
+    </td>
+
+    <td>
+
+        <form
+            method="post"
+            action="/web/admin/task-numbers/{{ row.serial }}/update"
+            class="inline-edit-form"
+        >
+
+            <input
+                name="taskno"
+                type="number"
+                value="{{ row.taskno }}"
+                required
+            >
+
+            <button type="submit">
+                Save
+            </button>
+
+        </form>
+
+    </td>
+
+    <td>
+        Serial {{ row.serial }}
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Template Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+<div>
+
+    <a
+        class="back-link"
+        href="/web/admin"
+    >
+        ← Back to Administration
+    </a>
+
+    <p class="eyebrow">
+        ADMINISTRATION
+    </p>
+
+    <h1>
+        Templated Activities
+    </h1>
+
+</div>
+
+</div>
+
+
+<section class="detail-card admin-section">
+
+<form
+    method="post"
+    action="/web/admin/templates/add"
+    class="admin-form"
+>
+
+    <div class="field">
+
+        <label>
+            Environment
+        </label>
+
+        <select
+            name="environment"
+            required
+        >
+
+            {% for env in environments %}
+
+            <option value="{{ env }}">
+                {{ env }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            Task Number
+        </label>
+
+        <input
+            name="tasknumber"
+            maxlength="5"
+            required
+        >
+
+    </div>
+
+
+    <div class="form-actions">
+
+        <button type="submit">
+            Add Template
+        </button>
+
+    </div>
+
+</form>
+
+</section>
+
+
+<div class="table-card">
+
+<table>
+
+<thead>
+<tr>
+    <th>Environment</th>
+    <th>Task Number</th>
+    <th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>{{ row.environment }}</td>
+    <td>{{ row.tasknumber }}</td>
+
+    <td>
+
+        <form
+            method="post"
+            action="/web/admin/templates/{{ row.id }}/delete"
+        >
+
+            <button
+                type="submit"
+                class="compact-danger-button"
+            >
+                Delete
+            </button>
+
+        </form>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+
+metadata:
+  name: aspen
+
+spec:
+
+  to:
+    kind: Service
+    name: aspen
+
+  port:
+    targetPort: http
+
+  tls:
+
+    termination: edge
+
+    insecureEdgeTerminationPolicy: Redirect

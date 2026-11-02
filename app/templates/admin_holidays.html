@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Holiday Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin"
+        >
+            ← Back to Administration
+        </a>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            Statutory Holidays
+        </h1>
+
+    </div>
+
+</div>
+
+
+<section class="detail-card admin-section">
+
+    <h2>
+        Add Holiday
+    </h2>
+
+    <form
+        method="post"
+        action="/web/admin/holidays/add"
+        class="admin-form"
+    >
+
+        <div class="field">
+
+            <label>
+                Holiday Date
+            </label>
+
+            <input
+                name="holiday"
+                type="datetime-local"
+                required
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Reason
+            </label>
+
+            <input
+                name="reason"
+                maxlength="50"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <button type="submit">
+                Add Holiday
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<div class="table-card">
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Date</th>
+    <th>Reason</th>
+    <th>Action</th>
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+        {{
+            row.holiday.strftime(
+                "%Y-%m-%d"
+            )
+        }}
+    </td>
+
+    <td>
+        {{ row.reason }}
+    </td>
+
+    <td>
+
+        <form
+            method="post"
+            action="/web/admin/holidays/{{ row.serial }}/delete"
+            onsubmit="return confirm(
+                'Delete this statutory holiday?'
+            );"
+        >
+
+            <button
+                class="compact-danger-button"
+                type="submit"
+            >
+                Delete
+            </button>
+
+        </form>
+
+    </td>
+
+</tr>
+
+{% else %}
+
+<tr>
+    <td colspan="3" class="empty-state">
+        No statutory holidays configured.
+    </td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+{% endblock %}

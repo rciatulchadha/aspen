@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Production Control
+{% endblock %}
+
+{% block content %}
+
+{% if schedule_populated %}
+
+<div class="alert alert-success">
+    The selected schedule date was populated successfully.
+    Only missing Activities were inserted.
+</div>
+
+{% endif %}
+
+
+{% if rolling_populated %}
+
+<div class="alert alert-success">
+    The rolling seven-day schedule was populated successfully.
+    ASPEN evaluated today through the next six days and inserted
+    only missing Activities.
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <p class="eyebrow">
+            PRODUCTION CONTROL
+        </p>
+
+        <h1>
+            Generate Daily Schedule
+        </h1>
+
+        <p>
+            Preview effective Daily Tasks after weekday,
+            date-range, task-number, estimated-time and
+            EOX transformations.
+        </p>
+
+    </div>
+
+
+    {% if request.state.user.is_admin %}
+
+    <a
+        class="secondary-button"
+        href="/web/daily-tasks"
+    >
+        Manage Daily Tasks
+    </a>
+
+    {% endif %}
+
+</div>
+
+
+<section class="detail-card production-control-card">
+
+    <h2>
+        Schedule Preview
+    </h2>
+
+    <form
+        method="get"
+        action="/web/production-control"
+        class="production-control-form"
+    >
+
+        <div class="field">
+
+            <label for="environment">
+                Environment
+            </label>
+
+            <select
+                id="environment"
+                name="environment"
+                required
+            >
+
+                <option value="">
+                    Select environment
+                </option>
+
+                {% for value in environments %}
+
+                <option
+                    value="{{ value }}"
+                    {% if value == selected_environment %}
+                    selected
+                    {% endif %}
+                >
+                    {{ value }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label for="schedule_date">
+                Schedule Date
+            </label>
+
+            <input
+                id="schedule_date"
+                name="schedule_date"
+                type="date"
+                value="{{ schedule_date }}"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <button type="submit">
+                Preview Schedule
+            </button>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+{% if request.state.user.is_admin %}
+
+<section class="detail-card rolling-schedule-card">
+
+    <div>
+
+        <p class="eyebrow">
+            ROLLING SCHEDULE
+        </p>
+
+        <h2>
+            Populate Next Seven Days
+        </h2>
+
+        <p>
+            Evaluate today through today plus six days.
+            Effective-date and weekday rules are applied
+            independently for each date. Existing Activities
+            are skipped.
+        </p>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/web/production-control/populate-seven-days"
+        onsubmit="return confirm(
+            'Populate all missing Activities for today through the next six days?'
+        );"
+    >
+
+        <div class="field">
+
+            <label for="rolling_environment">
+                Environment
+            </label>
+
+            <select
+                id="rolling_environment"
+                name="environment"
+                required
+            >
+
+                <option value="">
+                    Select environment
+                </option>
+
+                {% for value in environments %}
+
+                <option
+                    value="{{ value }}"
+                    {% if value == selected_environment %}
+                    selected
+                    {% endif %}
+                >
+                    {{ value }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <button type="submit">
+            Populate Seven-Day Schedule
+        </button>
+
+    </form>
+
+</section>
+
+{% endif %}
+
+
+{% if preview_error %}
+
+<div class="alert alert-error">
+    {{ preview_error }}
+</div>
+
+{% endif %}
+
+
+{% if selected_environment and schedule_date %}
+
+<div class="preview-summary">
+
+    <article class="summary-card">
+
+        <span class="summary-label">
+            Environment
+        </span>
+
+        <strong>
+            {{ selected_environment }}
+        </strong>
+
+    </article>
+
+
+    <article class="summary-card">
+
+        <span class="summary-label">
+            Schedule Date
+        </span>
+
+        <strong>
+            {{ schedule_date }}
+        </strong>
+
+    </article>
+
+
+    <article class="summary-card">
+
+        <span class="summary-label">
+            Eligible Tasks
+        </span>
+
+        <strong>
+            {{ preview_rows|length }}
+        </strong>
+
+    </article>
+
+
+    <article class="summary-card">
+
+        <span class="summary-label">
+            Already Existing
+        </span>
+
+        <strong
+            class="{% if duplicate_count > 0 %}summary-warning{% endif %}"
+        >
+            {{ duplicate_count }}
+        </strong>
+
+    </article>
+
+
+    <article class="summary-card">
+
+        <span class="summary-label">
+            Missing Activities
+        </span>
+
+        <strong>
+            {{ preview_rows|length - duplicate_count }}
+        </strong>
+
+    </article>
+
+</div>
+
+
+{% if preview_rows and duplicate_count == preview_rows|length %}
+
+<div class="alert alert-success">
+    Schedule already populated. All
+    {{ preview_rows|length }} generated Activities
+    already exist for this environment and date.
+    No new Activities need to be created.
+</div>
+
+{% elif duplicate_count > 0 %}
+
+<div class="alert alert-warning">
+    {{ duplicate_count }} generated Activities already
+    exist. ASPEN will insert only the remaining
+    {{ preview_rows|length - duplicate_count }}
+    missing Activities.
+</div>
+
+{% endif %}
+
+
+<div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Task</th>
+                    <th>Estimated Time</th>
+                    <th>Title</th>
+                    <th>Sub-environment</th>
+                    <th>Resource</th>
+                    <th>Dependency</th>
+                    <th>Critical</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for task in preview_rows %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ task.taskno }}
+                        </strong>
+                    </td>
+
+
+                    <td class="nowrap">
+
+                        {% if task.est_time %}
+
+                        {{
+                            task.est_time.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                        }}
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+                        {{ task.title or "—" }}
+                    </td>
+
+
+                    <td>
+                        {{ task.subenvironment or "—" }}
+                    </td>
+
+
+                    <td>
+                        {{ task.resource or "—" }}
+                    </td>
+
+
+                    <td>
+                        {{ task.dependency or "—" }}
+                    </td>
+
+
+                    <td>
+
+                        {% if task.criticalact %}
+
+                        <span class="critical-badge">
+                            Critical
+                        </span>
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td
+                        colspan="7"
+                        class="empty-state"
+                    >
+                        No eligible Daily Tasks were generated
+                        for this environment and schedule date.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+{% if request.state.user.is_admin
+      and preview_rows
+      and duplicate_count < preview_rows|length %}
+
+<section class="populate-section">
+
+    <div>
+
+        <h2>
+            Populate Missing Activities
+        </h2>
+
+        <p>
+            This will insert
+            {{ preview_rows|length - duplicate_count }}
+            missing Activities for
+            {{ selected_environment }}
+            on {{ schedule_date }}.
+        </p>
+
+    </div>
+
+
+    <form
+        method="post"
+        action="/web/production-control/populate"
+        onsubmit="return confirm(
+            'Populate the missing ASPEN Activities for this environment and date?'
+        );"
+    >
+
+        <input
+            type="hidden"
+            name="environment"
+            value="{{ selected_environment }}"
+        >
+
+        <input
+            type="hidden"
+            name="schedule_date"
+            value="{{ schedule_date }}"
+        >
+
+        <button type="submit">
+            Populate Missing Activities
+        </button>
+
+    </form>
+
+</section>
+
+{% endif %}
+
+{% endif %}
+
+{% endblock %}

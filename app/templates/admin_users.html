@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN User Management
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+
+<div class="alert alert-success">
+    {{ message }}
+</div>
+
+{% endif %}
+
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/admin"
+        >
+            ← Back to Administration
+        </a>
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            User Management
+        </h1>
+
+        <p>
+            Maintain permanent local ASPEN
+            Reader, Operator and Admin accounts.
+        </p>
+
+    </div>
+
+
+    <a
+        class="primary-button"
+        href="/web/admin/users/new"
+    >
+        + Add User
+    </a>
+
+</div>
+
+
+<form
+    method="get"
+    action="/web/admin/users"
+    class="filters user-management-filters"
+>
+
+    <div class="field">
+
+        <label for="search">
+            Search
+        </label>
+
+        <input
+            id="search"
+            name="search"
+            value="{{ search }}"
+            placeholder="Username or display name"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="role">
+            Role
+        </label>
+
+        <select
+            id="role"
+            name="role"
+        >
+
+            <option value="">
+                All Roles
+            </option>
+
+            {% for option in roles %}
+
+            <option
+                value="{{ option.value }}"
+                {% if selected_role == option.value %}
+                selected
+                {% endif %}
+            >
+                {{ option.label }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="account_status">
+            Account Status
+        </label>
+
+        <select
+            id="account_status"
+            name="account_status"
+        >
+
+            <option value="">
+                All
+            </option>
+
+            <option
+                value="enabled"
+                {% if selected_status == "enabled" %}
+                selected
+                {% endif %}
+            >
+                Enabled
+            </option>
+
+            <option
+                value="disabled"
+                {% if selected_status == "disabled" %}
+                selected
+                {% endif %}
+            >
+                Disabled
+            </option>
+
+            <option
+                value="locked"
+                {% if selected_status == "locked" %}
+                selected
+                {% endif %}
+            >
+                Locked
+            </option>
+
+            <option
+                value="password-change"
+                {% if selected_status == "password-change" %}
+                selected
+                {% endif %}
+            >
+                Password Change Required
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="filter-actions">
+
+        <button type="submit">
+            Apply Filters
+        </button>
+
+        <a
+            class="secondary-button"
+            href="/web/admin/users"
+        >
+            Reset
+        </a>
+
+    </div>
+
+</form>
+
+
+<div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Account</th>
+                    <th>Password</th>
+                    <th>Last Login</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+            {% for user in users %}
+
+                <tr>
+
+                    <td>
+
+                        <strong>
+                            {{ user.display_name }}
+                        </strong>
+
+                        <div class="security-username">
+                            {{ user.username }}
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        {% if user.role == "ASPEN.Admin" %}
+
+                        <span class="admin-badge">
+                            Admin
+                        </span>
+
+                        {% elif user.role == "ASPEN.Operator" %}
+
+                        <span class="operator-badge">
+                            Operator
+                        </span>
+
+                        {% else %}
+
+                        <span class="reader-badge">
+                            Reader
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if user.emergency_admin %}
+
+                        <span class="protected-badge">
+                            Protected Emergency Admin
+                        </span>
+
+                        {% elif not user.enabled %}
+
+                        <span class="disabled-badge">
+                            Disabled
+                        </span>
+
+                        {% elif user.locked_until
+                                and user.locked_until > now %}
+
+                        <span class="locked-badge">
+                            Locked
+                        </span>
+
+                        {% else %}
+
+                        <span class="enabled-badge">
+                            Enabled
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if user.must_change_password %}
+
+                        <span class="password-required-badge">
+                            Change Required
+                        </span>
+
+                        {% elif user.password_changed_at %}
+
+                        <span class="password-current-badge">
+                            Changed
+                        </span>
+
+                        {% else %}
+
+                        <span class="password-current-badge">
+                            Current
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="nowrap">
+
+                        {% if user.last_login_at %}
+
+                        {{
+                            user.last_login_at.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                        }}
+
+                        {% else %}
+
+                        Never
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td class="nowrap">
+
+                        {{
+                            user.created_at.strftime(
+                                "%Y-%m-%d"
+                            )
+                        }}
+
+                        <div class="security-username">
+                            by {{ user.created_by }}
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        {% if user.emergency_admin %}
+
+                        Protected
+
+                        {% else %}
+
+                        <div class="user-actions">
+
+                            <a
+                                class="compact-button"
+                                href="/web/admin/users/{{ user.id }}/edit"
+                            >
+                                Edit
+                            </a>
+
+
+                            <a
+                                class="compact-button"
+                                href="/web/admin/users/{{ user.id }}/reset-password"
+                            >
+                                Reset Password
+                            </a>
+
+
+                            {% if user.locked_until %}
+
+                            <form
+                                method="post"
+                                action="/web/admin/users/{{ user.id }}/unlock"
+                                class="inline-form"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="compact-restore-button"
+                                >
+                                    Unlock
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+
+                            {% if user.enabled %}
+
+                            <form
+                                method="post"
+                                action="/web/admin/users/{{ user.id }}/disable"
+                                class="inline-form"
+                                onsubmit="return confirm(
+                                    'Disable this ASPEN user?'
+                                );"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="compact-danger-button"
+                                >
+                                    Disable
+                                </button>
+
+                            </form>
+
+                            {% else %}
+
+                            <form
+                                method="post"
+                                action="/web/admin/users/{{ user.id }}/enable"
+                                class="inline-form"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="compact-restore-button"
+                                >
+                                    Enable
+                                </button>
+
+                            </form>
+
+                            {% endif %}
+
+                        </div>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+
+            {% else %}
+
+                <tr>
+
+                    <td
+                        colspan="7"
+                        class="empty-state"
+                    >
+                        No matching ASPEN users found.
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="ASPEN Operations Scheduler"
+    >
+
+    <title>
+        {% block title %}
+        ASPEN
+        {% endblock %}
+    </title>
+
+
+    <!-- =====================================================
+         CORE ASPEN STYLES
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/aspen.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         PRODUCTION CONTROL
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/production_control.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         TURNOVER / MPS
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/turnover.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         REPORTING
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/reports.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         AUTHENTICATION / RBAC
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/security.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         EMERGENCY SECURITY ADMINISTRATION
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/admin_security.css'
+        ) }}"
+    >
+
+
+    <!-- =====================================================
+         APPLICATION ADMINISTRATION
+         ===================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for(
+            'static',
+            path='/css/admin.css'
+        ) }}"
+    >
+	
+    <link
+    	rel="stylesheet"
+   	 href="{{ url_for(
+            'static',
+            path='/css/admin_users.css'
+    	) }}"
+    >	
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     TOP NAVIGATION
+     ========================================================= -->
+
+<header class="topbar">
+
+
+    <!-- ASPEN BRAND -->
+
+    <div class="brand-area">
+
+        <a
+            class="brand"
+            href="/"
+        >
+            ASPEN
+        </a>
+
+        <span class="brand-subtitle">
+            Operations Scheduler
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         AUTHENTICATED NAVIGATION
+         ===================================================== -->
+
+    {% if request.state.user %}
+
+    <nav aria-label="Main navigation">
+
+
+        <!-- Dashboard -->
+
+        <a href="/">
+            Dashboard
+        </a>
+
+
+        <!-- Activities
+             Reader / Operator / Admin -->
+
+        <a href="/web/activities">
+            Activities
+        </a>
+
+
+        <!-- Daily Tasks
+             Admin only -->
+
+        {% if request.state.user.is_admin %}
+
+        <a href="/web/daily-tasks">
+            Daily Tasks
+        </a>
+
+        {% endif %}
+
+
+        <!-- Production Control
+             Reader / Operator = Preview
+             Admin = Preview + Populate -->
+
+        <a href="/web/production-control">
+            Production Control
+        </a>
+
+
+        <!-- Turnover
+             Reader / Operator = View
+             Admin = Full Access -->
+
+        <a href="/web/turnover">
+            Turnover
+        </a>
+
+
+        <!-- MPS
+             Reader / Operator = View
+             Admin = Full Access -->
+
+        <a href="/web/turnover/mps">
+            MPS
+        </a>
+
+
+        <!-- Reports
+             Reader / Operator / Admin -->
+
+        <a href="/web/reports">
+            Reports
+        </a>
+
+
+        <!-- Administration
+             Admin only -->
+
+        {% if request.state.user.is_admin %}
+
+        <a href="/web/admin">
+            Administration
+        </a>
+
+
+        <!-- API Documentation
+             Admin only -->
+
+        <a href="/docs">
+            API
+        </a>
+
+        {% endif %}
+
+    </nav>
+
+
+    <!-- =====================================================
+         CURRENT USER / SESSION
+         ===================================================== -->
+
+    <div class="user-menu">
+
+        <div class="user-details">
+
+            <strong>
+                {{
+                    request.state.user.display_name
+                }}
+            </strong>
+
+
+            <span>
+
+                {% if request.state.user.is_admin %}
+
+                    Admin
+
+                {% elif request.state.user.is_operator %}
+
+                    Operator
+
+                {% else %}
+
+                    Reader
+
+                {% endif %}
+
+            </span>
+
+
+            <small>
+                {{
+                    request.state.user
+                    .authentication_type
+                }}
+            </small>
+
+        </div>
+
+
+        <!-- Sign Out -->
+
+        <form
+            method="post"
+            action="/logout"
+            class="inline-form"
+        >
+
+            <button
+                type="submit"
+                class="logout-button"
+            >
+                Sign Out
+            </button>
+
+        </form>
+
+    </div>
+
+    {% endif %}
+
+</header>
+
+
+<!-- =========================================================
+     PAGE CONTENT
+     ========================================================= -->
+
+<main class="page-container">
+
+    {% block content %}
+    {% endblock %}
+
+</main>
+
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+
+<footer class="footer">
+
+    <div>
+        ASPEN modernization platform
+    </div>
+
+    <div>
+        Workload Automation
+    </div>
+
+</footer>
+
+
+</body>
+
+</html>

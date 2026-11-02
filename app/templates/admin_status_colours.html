@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}
+ASPEN Status Colour Administration
+{% endblock %}
+
+{% block content %}
+
+{% if message %}
+<div class="alert alert-success">
+    {{ message }}
+</div>
+{% endif %}
+
+
+<div class="page-heading">
+
+<div>
+
+    <a
+        class="back-link"
+        href="/web/admin"
+    >
+        ← Back to Administration
+    </a>
+
+    <p class="eyebrow">
+        ADMINISTRATION
+    </p>
+
+    <h1>
+        Status Colours
+    </h1>
+
+</div>
+
+</div>
+
+
+<div class="table-card">
+
+<table>
+
+<thead>
+<tr>
+    <th>Status</th>
+    <th>Current Colour</th>
+    <th>Update</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for row in rows %}
+
+<tr>
+
+    <td>
+        {{ row.status }}
+    </td>
+
+    <td>
+
+        <span
+            class="colour-preview"
+            style="background-color: {{ row.colour }};"
+        ></span>
+
+        {{ row.colour }}
+
+    </td>
+
+    <td>
+
+        <form
+            method="post"
+            action="/web/admin/status-colours/{{ row.id }}/update"
+            class="inline-edit-form"
+        >
+
+            <input
+                name="colour"
+                type="text"
+                maxlength="7"
+                value="{{ row.colour }}"
+                required
+            >
+
+            <button type="submit">
+                Save
+            </button>
+
+        </form>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+{% endblock %}

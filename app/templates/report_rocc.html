@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}
+ROCC Operations Report
+{% endblock %}
+
+{% block content %}
+
+<div class="page-heading">
+
+    <div>
+
+        <a
+            class="back-link"
+            href="/web/reports"
+        >
+            ← Back to Reports
+        </a>
+
+        <p class="eyebrow">
+            ROCC REPORTING
+        </p>
+
+        <h1>
+            Operations Report
+        </h1>
+
+    </div>
+
+</div>
+
+
+{% if error %}
+
+<div class="alert alert-error">
+    {{ error }}
+</div>
+
+{% endif %}
+
+
+<form
+    method="get"
+    action="/web/reports/rocc"
+    class="report-filters"
+>
+
+    <div class="field">
+
+        <label for="environment">
+            Environment
+        </label>
+
+        <select
+            id="environment"
+            name="environment"
+            required
+        >
+
+            <option value="">
+                Select environment
+            </option>
+
+            {% for value in environments %}
+
+            <option
+                value="{{ value }}"
+                {% if value == environment %}
+                selected
+                {% endif %}
+            >
+                {{ value }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="date_from">
+            From
+        </label>
+
+        <input
+            id="date_from"
+            name="date_from"
+            type="date"
+            value="{{ date_from }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="date_to">
+            To
+        </label>
+
+        <input
+            id="date_to"
+            name="date_to"
+            type="date"
+            value="{{ date_to }}"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label for="search">
+            Search
+        </label>
+
+        <input
+            id="search"
+            name="search"
+            value="{{ search }}"
+            placeholder="Optional text search"
+        >
+
+    </div>
+
+
+    <div class="form-actions">
+
+        <button type="submit">
+            Run Report
+        </button>
+
+    </div>
+
+</form>
+
+
+{% if environment and date_from and date_to %}
+
+<div class="report-summary">
+
+    <strong>
+        {{ rows|length }}
+    </strong>
+
+    report rows returned.
+
+</div>
+
+
+{% include "report_rows.html" %}
+
+{% endif %}
+
+{% endblock %}

@@ -27,3 +27,12 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+
+# ASPEN migration/export data
+import/
+
+# Generated SQL validation/extraction output
+sql/*.out
+
+# Migrated production data
+import/

@@ -1,5 +1,10 @@
 name: ASPEN CI
 
+
+# ============================================================
+# TRIGGERS
+# ============================================================
+
 on:
 
   workflow_dispatch:
@@ -12,7 +17,7 @@ on:
 
         required: true
 
-        default: "0.1.0"
+        default: "0.1.4"
 
 
   push:
@@ -27,8 +32,6 @@ on:
 # ============================================================
 
 env:
-
-  IMAGE_NAME: aspen
 
   QUAY_REGISTRY: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com
 
@@ -83,23 +86,23 @@ jobs:
 
           echo "ASPEN CI"
           echo "========"
-
+          echo
           echo "Commit : ${GITHUB_SHA}"
           echo "Branch : ${GITHUB_REF_NAME}"
           echo "Runner : ${RUNNER_NAME}"
-
           echo
-
-          python --version
-
+          echo "Podman:"
           podman --version
 
 
       # ======================================================
-      # PYTHON VALIDATION
+      # PYTHON SOURCE VALIDATION
+      #
+      # This validates the ASPEN source with the Python
+      # installed on the GitHub Runner.
       # ======================================================
 
-      - name: Compile ASPEN
+      - name: Compile ASPEN source
 
         shell: bash
 
@@ -107,19 +110,20 @@ jobs:
 
           set -euo pipefail
 
-          python -m compileall \
+          python3 -m compileall \
             app \
             scripts
 
 
       # ======================================================
-      # DETERMINE IMAGE VERSION
+      # DETERMINE IMAGE TAG
       #
-      # Manual workflow:
+      # workflow_dispatch:
       #
-      #     0.1.0
+      #     User supplied release version
+      #     Example: 0.1.4
       #
-      # Normal main push:
+      # push to main:
       #
       #     Git commit SHA
       # ======================================================
@@ -134,6 +138,7 @@ jobs:
 
           set -euo pipefail
 
+
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
 
               IMAGE_TAG="${{ github.event.inputs.version }}"
@@ -141,6 +146,15 @@ jobs:
           else
 
               IMAGE_TAG="${GITHUB_SHA}"
+
+          fi
+
+
+          if [ -z "${IMAGE_TAG}" ]; then
+
+              echo "ERROR: Unable to determine image tag."
+
+              exit 1
 
           fi
 
@@ -154,7 +168,13 @@ jobs:
 
 
       # ======================================================
-      # BUILD CONTAINER
+      # BUILD ASPEN
+      #
+      # Containerfile currently builds:
+      #
+      #   Red Hat UBI 10
+      #   Python 3.12
+      #   UBI Micro runtime
       # ======================================================
 
       - name: Build ASPEN container
@@ -173,10 +193,18 @@ jobs:
 
 
       # ======================================================
-      # CONTAINER DEPENDENCY VALIDATION
+      # VERIFY PYTHON RUNTIME
+      #
+      # Do not use:
+      #
+      #     --entrypoint python
+      #
+      # ASPEN UBI Micro intentionally contains:
+      #
+      #     /usr/bin/python3.12
       # ======================================================
 
-      - name: Validate container dependencies
+      - name: Validate Python runtime
 
         shell: bash
 
@@ -186,16 +214,37 @@ jobs:
 
           podman run \
             --rm \
-            --entrypoint python \
+            --entrypoint /usr/bin/python3.12 \
             "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
-            -c "import fastapi, sqlalchemy, psycopg, jinja2, pwdlib; print('ASPEN container dependencies OK')"
+            -c "import sys; print('ASPEN Python runtime:', sys.version)"
 
 
       # ======================================================
-      # ASPEN APPLICATION IMPORT TEST
+      # DEPENDENCY VALIDATION
+      # ======================================================
+
+      - name: Validate ASPEN dependencies
+
+        shell: bash
+
+        run: |
+
+          set -euo pipefail
+
+          podman run \
+            --rm \
+            --entrypoint /usr/bin/python3.12 \
+            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
+            -c "import fastapi, sqlalchemy, psycopg, jinja2, pwdlib, argon2; print('ASPEN container dependencies OK')"
+
+
+      # ======================================================
+      # APPLICATION IMPORT VALIDATION
       #
-      # This validates that the packaged application imports.
-      # It does NOT connect to PostgreSQL.
+      # The database URL is deliberately synthetic.
+      #
+      # This test confirms the packaged ASPEN application can
+      # import. It does not require the production database.
       # ======================================================
 
       - name: Validate ASPEN application
@@ -212,13 +261,18 @@ jobs:
             -e VSR_SESSION_SECRET="github-build-validation-only" \
             -e VSR_LOCAL_AUTH_ENABLED="true" \
             -e VSR_SESSION_IDLE_MINUTES="120" \
-            --entrypoint python \
+            --entrypoint /usr/bin/python3.12 \
             "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
             -c "from app.main import app; print('ASPEN application import OK')"
 
 
       # ======================================================
-      # VALIDATE QUAY SECRETS
+      # VALIDATE QUAY CREDENTIALS
+      #
+      # GitHub repository secrets required:
+      #
+      #     QUAY_USERNAME
+      #     QUAY_TOKEN
       #
       # Values are intentionally never displayed.
       # ======================================================
@@ -287,7 +341,7 @@ jobs:
 
 
       # ======================================================
-      # PUSH IMAGE
+      # PUSH ASPEN IMAGE
       # ======================================================
 
       - name: Push ASPEN image
@@ -299,9 +353,10 @@ jobs:
           set -euo pipefail
 
 
+          echo
           echo "Pushing ASPEN image:"
-
           echo "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+          echo
 
 
           podman push \
@@ -322,10 +377,19 @@ jobs:
 
 
           echo
-          echo "ASPEN CI completed successfully."
+          echo "============================================"
+          echo "ASPEN CI completed successfully"
+          echo "============================================"
           echo
           echo "Image:"
           echo "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+          echo
+          echo "Commit:"
+          echo "${GITHUB_SHA}"
+          echo
+          echo "Runtime:"
+          echo "Red Hat UBI 10 Micro / Python 3.12"
+          echo
 
 
       # ======================================================
@@ -343,3 +407,42 @@ jobs:
           podman logout \
             "${QUAY_REGISTRY}" \
             || true
+
+
+      # ======================================================
+      # LOCAL RUNNER CLEANUP
+      #
+      # Self-hosted runners retain Podman build layers.
+      # Cleaning dangling data prevents the ASPEN runner disk
+      # from filling up after repeated builds.
+      # ======================================================
+
+      - name: Cleanup Podman build artifacts
+
+        if: always()
+
+        shell: bash
+
+        run: |
+
+          echo "Podman disk usage before cleanup:"
+
+          podman system df || true
+
+
+          echo
+          echo "Removing dangling images and stopped containers..."
+
+          podman image prune \
+            --force \
+            || true
+
+          podman container prune \
+            --force \
+            || true
+
+
+          echo
+          echo "Podman disk usage after cleanup:"
+
+          podman system df || true

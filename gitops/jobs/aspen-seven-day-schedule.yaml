@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  name: aspen-seven-day-schedule
+  namespace: aspen
+
+  labels:
+    app: aspen
+    component: seven-day-schedule
+
+spec:
+
+  # Control-M owns retry handling.
+  backoffLimit: 0
+
+  # Maximum execution time: 30 minutes.
+  activeDeadlineSeconds: 1800
+
+  template:
+
+    metadata:
+      labels:
+        app: aspen
+        component: seven-day-schedule
+
+    spec:
+
+      restartPolicy: Never
+
+      containers:
+
+        - name: seven-day-schedule
+
+          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.4
+
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - /usr/bin/python3.12
+
+          args:
+            - /opt/app-root/src/scripts/populate_seven_day_schedule.py
+
+          envFrom:
+
+            - configMapRef:
+                name: aspen-config
+
+            - secretRef:
+                name: aspen-secret
+
+          resources:
+
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -48,7 +48,7 @@ Activity {{ activity.taskno }}
     <div>
         <a
             class="back-link"
-            href="/web/activities"
+            href="{{ return_url }}"
         >
             ← Back to Activities
         </a>
@@ -78,7 +78,7 @@ Activity {{ activity.taskno }}
 
         <a
             class="secondary-button"
-            href="/web/activities/{{ activity.id }}/edit"
+            href="/web/activities/{{ activity.id }}/edit?return_url={{ return_url|urlencode }}"
         >
             Edit Activity
         </a>
@@ -91,6 +91,7 @@ Activity {{ activity.taskno }}
             action="/web/activities/{{ activity.id }}/restore"
             class="inline-form"
         >
+            <input type="hidden" name="return_url" value="{{ return_url }}">
             <button
                 type="submit"
                 class="restore-button"
@@ -109,6 +110,7 @@ Activity {{ activity.taskno }}
                 'Soft delete this Activity? Events and history will be preserved.'
             );"
         >
+            <input type="hidden" name="return_url" value="{{ return_url }}">
             <button
                 type="submit"
                 class="danger-button"
@@ -315,6 +317,7 @@ Activity {{ activity.taskno }}
             action="/web/activities/{{ activity.id }}/events"
             class="event-form"
         >
+            <input type="hidden" name="return_url" value="{{ return_url }}">
 
             <div class="field">
 

@@ -12,7 +12,7 @@ Edit Daily Task {{ task.taskno }}
 
         <a
             class="back-link"
-            href="/web/daily-tasks"
+            href="{{ return_url }}"
         >
             ← Back to Daily Tasks
         </a>
@@ -125,6 +125,7 @@ Edit Daily Task {{ task.taskno }}
         action="/web/daily-tasks/{{ task.serial }}/edit"
         class="activity-form"
     >
+        <input type="hidden" name="return_url" value="{{ return_url }}">
 
         <div class="field">
 
@@ -305,7 +306,7 @@ Edit Daily Task {{ task.taskno }}
 
             <a
                 class="secondary-button"
-                href="/web/daily-tasks"
+                href="{{ return_url }}"
             >
                 Cancel
             </a>

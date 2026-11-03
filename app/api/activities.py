@@ -1,10 +1,20 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.activity_access import (
+    activity_history_filter,
+    require_activity_history_access,
+)
 from app.database import get_db
 from app.models import Activity
 from app.schemas import (
@@ -25,6 +35,7 @@ router = APIRouter(
     response_model=ActivityListResponse,
 )
 def list_activities(
+    request: Request,
     environment: Optional[str] = None,
     subenvironment: Optional[str] = None,
     status: Optional[str] = None,
@@ -45,7 +56,16 @@ def list_activities(
     ),
     db: Session = Depends(get_db),
 ):
-    statement = select(Activity)
+    user = request.state.user
+
+    statement = (
+        select(Activity)
+        .where(
+            activity_history_filter(
+                user=user,
+            )
+        )
+    )
 
     if not include_deleted:
         statement = statement.where(
@@ -59,7 +79,8 @@ def list_activities(
 
     if subenvironment:
         statement = statement.where(
-            Activity.subenvironment == subenvironment
+            Activity.subenvironment
+            == subenvironment
         )
 
     if status:
@@ -88,15 +109,27 @@ def list_activities(
         )
 
     if search:
-        search_pattern = "%{}%".format(search)
+        search_pattern = "%{}%".format(
+            search
+        )
 
         statement = statement.where(
             or_(
-                Activity.title.ilike(search_pattern),
-                Activity.details.ilike(search_pattern),
-                Activity.note.ilike(search_pattern),
-                Activity.dependency.ilike(search_pattern),
-                Activity.resource.ilike(search_pattern),
+                Activity.title.ilike(
+                    search_pattern
+                ),
+                Activity.details.ilike(
+                    search_pattern
+                ),
+                Activity.note.ilike(
+                    search_pattern
+                ),
+                Activity.dependency.ilike(
+                    search_pattern
+                ),
+                Activity.resource.ilike(
+                    search_pattern
+                ),
             )
         )
 
@@ -115,7 +148,9 @@ def list_activities(
     ).all()
 
     items = [
-        ActivitySummary.model_validate(activity)
+        ActivitySummary.model_validate(
+            activity
+        )
         for activity in activities
     ]
 
@@ -132,26 +167,36 @@ def list_activities(
     response_model=ActivityResponse,
 )
 def get_activity(
+    request: Request,
     activity_id: int,
     db: Session = Depends(get_db),
 ):
     statement = (
         select(Activity)
         .options(
-            selectinload(Activity.events)
+            selectinload(
+                Activity.events
+            )
         )
         .where(
             Activity.id == activity_id
         )
     )
 
-    activity = db.scalar(statement)
+    activity = db.scalar(
+        statement
+    )
 
     if activity is None:
         raise HTTPException(
             status_code=404,
             detail="Activity not found",
         )
+
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
 
     return ActivityResponse.model_validate(
         activity

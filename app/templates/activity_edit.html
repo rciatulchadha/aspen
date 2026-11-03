@@ -10,7 +10,7 @@ Edit Activity {{ activity.taskno }}
     <div>
         <a
             class="back-link"
-            href="/web/activities/{{ activity.id }}"
+            href="{{ return_url }}"
         >
             ← Back to Activity
         </a>
@@ -40,6 +40,7 @@ Edit Activity {{ activity.taskno }}
     action="/web/activities/{{ activity.id }}/edit"
     class="activity-form"
 >
+    <input type="hidden" name="return_url" value="{{ return_url }}">
 
     <div class="field">
         <label for="taskno">
@@ -270,7 +271,7 @@ Edit Activity {{ activity.taskno }}
 
         <a
             class="secondary-button"
-            href="/web/activities/{{ activity.id }}"
+            href="{{ return_url }}"
         >
             Cancel
         </a>

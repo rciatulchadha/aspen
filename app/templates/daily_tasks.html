@@ -286,7 +286,7 @@ ASPEN Daily Tasks
                     <td>
 
                         <a
-                            href="/web/daily-tasks/{{ task.serial }}/edit"
+                            href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
                         >
                             {{ task.taskno }}
                         </a>
@@ -297,7 +297,7 @@ ASPEN Daily Tasks
                     <td>
 
                         <a
-                            href="/web/daily-tasks/{{ task.serial }}/edit"
+                            href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
                         >
                             {{ task.title }}
                         </a>
@@ -364,7 +364,7 @@ ASPEN Daily Tasks
 
                             <a
                                 class="compact-button"
-                                href="/web/daily-tasks/{{ task.serial }}/edit"
+                                href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
                             >
                                 Edit
                             </a>
@@ -377,6 +377,7 @@ ASPEN Daily Tasks
                                 action="/web/daily-tasks/{{ task.serial }}/restore"
                                 class="inline-form"
                             >
+                                <input type="hidden" name="return_url" value="{{ current_list_url }}">
 
                                 <button
                                     type="submit"

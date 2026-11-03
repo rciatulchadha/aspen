@@ -15,6 +15,7 @@ from fastapi.responses import (
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import (
     String,
+    case,
     func,
     or_,
     select,
@@ -29,6 +30,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import DailyTask
 from app.security import write_audit
+from app.return_urls import daily_task_return_url
 
 
 router = APIRouter(
@@ -251,6 +253,73 @@ def get_task_schedule_status(
 
     return "Active"
 
+def daily_task_schedule_order():
+    return case(
+        (
+            DailyTask.taskno.between(
+                0,
+                99,
+            ),
+            0,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "1%"
+            ),
+            1,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "2%"
+            ),
+            2,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "3%"
+            ),
+            3,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "4%"
+            ),
+            4,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "5%"
+            ),
+            5,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "6%"
+            ),
+            6,
+        ),
+        (
+            DailyTask.taskno.cast(
+                String
+            ).like(
+                "7%"
+            ),
+            7,
+        ),
+        else_=8,
+    )
 
 def validate_time_value(
     value: str,
@@ -626,6 +695,7 @@ def daily_tasks_page(
         select(DailyTask)
         .where(*filters)
         .order_by(
+            daily_task_schedule_order().asc(),
             DailyTask.environment.asc(),
             DailyTask.time.asc(),
             DailyTask.taskno.asc(),
@@ -665,10 +735,13 @@ def daily_tasks_page(
             }
         )
 
+    current_list_url = str(request.url)
+
     return templates.TemplateResponse(
         request=request,
         name="daily_tasks.html",
         context={
+            "current_list_url": current_list_url,
             "task_rows": task_rows,
             "tasks": tasks,
             "environments":
@@ -1017,9 +1090,11 @@ def create_daily_task(
 def edit_daily_task_page(
     request: Request,
     serial: int,
+    return_url: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     require_admin(request)
+    return_url_value = daily_task_return_url(return_url)
 
     task = get_daily_task_or_404(
         db,
@@ -1036,6 +1111,7 @@ def edit_daily_task_page(
         request=request,
         name="daily_task_edit.html",
         context={
+            "return_url": return_url_value,
             "task":
                 task,
             "environments":
@@ -1160,6 +1236,7 @@ def update_daily_task(
             name="daily_task_edit.html",
             status_code=400,
             context={
+                "return_url": return_url_value,
                 "task":
                     task,
                 "environments":
@@ -1270,14 +1347,9 @@ def update_daily_task(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/daily-tasks"
-            "?task_updated=true"
-            "&environment={}"
-        ).format(
-            task.environment
-        ),
+        url=f"{return_url_value}{separator}task_updated=true",
         status_code=303,
     )
 
@@ -1293,10 +1365,12 @@ def update_daily_task(
 def delete_daily_task(
     request: Request,
     serial: int,
+    return_url: str = Form("/web/daily-tasks"),
     db: Session = Depends(get_db),
 ):
     admin = require_admin(request)
 
+    return_url_value = daily_task_return_url(return_url)
     task = get_daily_task_or_404(
         db,
         serial,
@@ -1333,12 +1407,9 @@ def delete_daily_task(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/daily-tasks"
-            "?task_deleted=true"
-            "&include_deleted=true"
-        ),
+        url=f"{return_url_value}{separator}task_deleted=true",
         status_code=303,
     )
 
@@ -1354,10 +1425,12 @@ def delete_daily_task(
 def restore_daily_task(
     request: Request,
     serial: int,
+    return_url: str = Form("/web/daily-tasks"),
     db: Session = Depends(get_db),
 ):
     admin = require_admin(request)
 
+    return_url_value = daily_task_return_url(return_url)
     task = get_daily_task_or_404(
         db,
         serial,
@@ -1394,12 +1467,9 @@ def restore_daily_task(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/daily-tasks"
-            "?task_restored=true"
-            "&include_deleted=true"
-        ),
+        url=f"{return_url_value}{separator}task_restored=true",
         status_code=303,
     )
 

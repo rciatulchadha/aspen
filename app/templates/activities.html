@@ -176,7 +176,7 @@ ASPEN Activities
 
                 <tr>
                     <td>
-                        <a href="/web/activities/{{ activity.id }}">
+                        <a href="/web/activities/{{ activity.id }}?return_url={{ current_list_url|urlencode }}">
                             {{ activity.taskno }}
                         </a>
                     </td>
@@ -190,7 +190,7 @@ ASPEN Activities
                     </td>
 
                     <td>
-                        <a href="/web/activities/{{ activity.id }}">
+                        <a href="/web/activities/{{ activity.id }}?return_url={{ current_list_url|urlencode }}">
                             {{
                                 activity.title
                                 or "(No title)"

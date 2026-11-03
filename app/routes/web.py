@@ -20,10 +20,22 @@ from sqlalchemy import (
     select,
     text,
 )
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.exc import (
+    IntegrityError,
+    SQLAlchemyError,
+)
+from sqlalchemy.orm import (
+    Session,
+    selectinload,
+)
 
+from app.activity_access import (
+    activity_history_filter,
+    require_activity_datetime_access,
+    require_activity_history_access,
+)
 from app.database import get_db
+from app.return_urls import activity_return_url
 from app.models import Activity
 
 
@@ -38,19 +50,31 @@ templates = Jinja2Templates(
 
 
 # ============================================================
-# Helper
+# HELPER
 # ============================================================
 
-def get_environment_values(db):
+def get_environment_values(
+    db,
+):
     return db.scalars(
-        select(Activity.environment)
+        select(
+            Activity.environment
+        )
         .distinct()
-        .order_by(Activity.environment)
+        .order_by(
+            Activity.environment
+        )
     ).all()
 
 
 # ============================================================
 # ACTIVITY LIST
+#
+# Reader / Operator:
+#     Previous 24 hours, current and future Activities.
+#
+# Admin:
+#     Previous 7 days, current and future Activities.
 # ============================================================
 
 @router.get(
@@ -68,14 +92,26 @@ def activities_page(
     page_size: int = 50,
     db: Session = Depends(get_db),
 ):
-    page = max(page, 1)
+    user = request.state.user
+
+    page = max(
+        page,
+        1,
+    )
 
     page_size = min(
-        max(page_size, 10),
+        max(
+            page_size,
+            10,
+        ),
         100,
     )
 
-    filters = []
+    filters = [
+        activity_history_filter(
+            user=user,
+        )
+    ]
 
     if not include_deleted:
         filters.append(
@@ -84,12 +120,14 @@ def activities_page(
 
     if environment:
         filters.append(
-            Activity.environment == environment
+            Activity.environment
+            == environment
         )
 
     if subenvironment:
         filters.append(
-            Activity.subenvironment == subenvironment
+            Activity.subenvironment
+            == subenvironment
         )
 
     if status:
@@ -104,20 +142,38 @@ def activities_page(
 
         filters.append(
             or_(
-                Activity.title.ilike(pattern),
-                Activity.details.ilike(pattern),
-                Activity.note.ilike(pattern),
-                Activity.resource.ilike(pattern),
-                Activity.dependency.ilike(pattern),
+                Activity.title.ilike(
+                    pattern
+                ),
+                Activity.details.ilike(
+                    pattern
+                ),
+                Activity.note.ilike(
+                    pattern
+                ),
+                Activity.resource.ilike(
+                    pattern
+                ),
+                Activity.dependency.ilike(
+                    pattern
+                ),
                 Activity.taskno.cast(
                     String
-                ).ilike(pattern),
+                ).ilike(
+                    pattern
+                ),
             )
         )
 
     total_rows = db.scalar(
-        select(func.count(Activity.id))
-        .where(*filters)
+        select(
+            func.count(
+                Activity.id
+            )
+        )
+        .where(
+            *filters
+        )
     ) or 0
 
     total_pages = max(
@@ -138,32 +194,52 @@ def activities_page(
     ) * page_size
 
     activities = db.scalars(
-        select(Activity)
-        .where(*filters)
+        select(
+            Activity
+        )
+        .where(
+            *filters
+        )
         .order_by(
             Activity.est_time.asc(),
             Activity.taskno.asc(),
         )
-        .offset(offset)
-        .limit(page_size)
+        .offset(
+            offset
+        )
+        .limit(
+            page_size
+        )
     ).all()
 
-    environments = get_environment_values(db)
+    environments = (
+        get_environment_values(
+            db
+        )
+    )
 
     statuses = db.scalars(
-        select(Activity.status)
+        select(
+            Activity.status
+        )
         .where(
-            Activity.status.is_not(None)
+            Activity.status.is_not(
+                None
+            )
         )
         .distinct()
-        .order_by(Activity.status)
+        .order_by(
+            Activity.status
+        )
     ).all()
 
     subenvironments = []
 
     if environment:
         subenvironments = db.scalars(
-            select(Activity.subenvironment)
+            select(
+                Activity.subenvironment
+            )
             .where(
                 Activity.environment
                 == environment
@@ -174,29 +250,57 @@ def activities_page(
             )
         ).all()
 
+    current_list_url = str(request.url)
+
     return templates.TemplateResponse(
         request=request,
         name="activities.html",
         context={
-            "activities": activities,
-            "environments": environments,
-            "statuses": statuses,
-            "subenvironments": subenvironments,
-            "selected_environment": (
-                environment or ""
+            "current_list_url": current_list_url,
+            "activities":
+                activities,
+
+            "environments":
+                environments,
+
+            "statuses":
+                statuses,
+
+            "subenvironments":
+                subenvironments,
+
+            "selected_environment":
+                environment or "",
+
+            "selected_subenvironment":
+                subenvironment or "",
+
+            "selected_status":
+                status or "",
+
+            "search":
+                search or "",
+
+            "include_deleted":
+                include_deleted,
+
+            "page":
+                page,
+
+            "page_size":
+                page_size,
+
+            "total_rows":
+                total_rows,
+
+            "total_pages":
+                total_pages,
+
+            "history_window_label": (
+                "7 days"
+                if user.is_admin
+                else "24 hours"
             ),
-            "selected_subenvironment": (
-                subenvironment or ""
-            ),
-            "selected_status": (
-                status or ""
-            ),
-            "search": search or "",
-            "include_deleted": include_deleted,
-            "page": page,
-            "page_size": page_size,
-            "total_rows": total_rows,
-            "total_pages": total_pages,
         },
     )
 
@@ -204,7 +308,7 @@ def activities_page(
 # ============================================================
 # NEW ACTIVITY FORM
 #
-# Must appear before /activities/{activity_id}
+# Must appear before /activities/{activity_id}.
 # ============================================================
 
 @router.get(
@@ -219,17 +323,28 @@ def new_activity_page(
         request=request,
         name="activity_new.html",
         context={
-            "environments": get_environment_values(
-                db
-            ),
-            "error": None,
-            "form": None,
+            "environments":
+                get_environment_values(
+                    db
+                ),
+
+            "error":
+                None,
+
+            "form":
+                None,
         },
     )
 
 
 # ============================================================
 # CREATE ACTIVITY
+#
+# Operator:
+#     Cannot create an Activity more than 24 hours in the past.
+#
+# Admin:
+#     Cannot create an Activity more than 7 days in the past.
 # ============================================================
 
 @router.post(
@@ -251,37 +366,73 @@ def create_activity(
     db: Session = Depends(get_db),
 ):
     clean_title = title.strip()
+
     clean_details = details.strip()
-    clean_environment = environment.strip()
+
+    clean_environment = (
+        environment.strip()
+    )
+
     clean_subenvironment = (
         subenvironment.strip()
     )
+
     clean_note = note.strip()
-    clean_dependency = dependency.strip()
+
+    clean_dependency = (
+        dependency.strip()
+    )
+
     clean_resource = resource.strip()
+
     clean_username = username.strip()
 
-    environments = get_environment_values(db)
+    environments = (
+        get_environment_values(
+            db
+        )
+    )
 
     form_values = {
-        "taskno": taskno,
-        "est_time": est_time.strftime(
-            "%Y-%m-%dT%H:%M"
-        ),
-        "title": title,
-        "details": details,
-        "note": note,
-        "environment": environment,
-        "subenvironment": subenvironment,
-        "dependency": dependency,
-        "resource": resource,
-        "username": username,
+        "taskno":
+            taskno,
+
+        "est_time":
+            est_time.strftime(
+                "%Y-%m-%dT%H:%M"
+            ),
+
+        "title":
+            title,
+
+        "details":
+            details,
+
+        "note":
+            note,
+
+        "environment":
+            environment,
+
+        "subenvironment":
+            subenvironment,
+
+        "dependency":
+            dependency,
+
+        "resource":
+            resource,
+
+        "username":
+            username,
     }
 
     error = None
 
     if not clean_title:
-        error = "Title is required."
+        error = (
+            "Title is required."
+        )
 
     elif not clean_details:
         error = (
@@ -289,42 +440,58 @@ def create_activity(
         )
 
     elif not clean_environment:
-        error = "Environment is required."
+        error = (
+            "Environment is required."
+        )
 
     elif not clean_username:
-        error = "Operator is required."
+        error = (
+            "Operator is required."
+        )
 
-    elif len(clean_title) > 500:
+    elif len(
+        clean_title
+    ) > 500:
         error = (
             "Title cannot exceed "
             "500 characters."
         )
 
-    elif len(clean_environment) > 10:
+    elif len(
+        clean_environment
+    ) > 10:
         error = (
             "Environment cannot exceed "
             "10 characters."
         )
 
-    elif len(clean_subenvironment) > 25:
+    elif len(
+        clean_subenvironment
+    ) > 25:
         error = (
             "Sub-environment cannot exceed "
             "25 characters."
         )
 
-    elif len(clean_dependency) > 50:
+    elif len(
+        clean_dependency
+    ) > 50:
         error = (
             "Dependency cannot exceed "
             "50 characters."
         )
 
-    elif len(clean_resource) > 50:
+    elif len(
+        clean_resource
+    ) > 50:
         error = (
             "Resource cannot exceed "
             "50 characters."
         )
 
-    elif len(clean_username) > 50:
+    elif len(
+        clean_username
+    ) > 50:
         error = (
             "Operator cannot exceed "
             "50 characters."
@@ -336,11 +503,21 @@ def create_activity(
             name="activity_new.html",
             status_code=400,
             context={
-                "environments": environments,
-                "error": error,
-                "form": form_values,
+                "environments":
+                    environments,
+
+                "error":
+                    error,
+
+                "form":
+                    form_values,
             },
         )
+
+    require_activity_datetime_access(
+        est_time=est_time,
+        user=request.state.user,
+    )
 
     try:
         db.execute(
@@ -361,33 +538,60 @@ def create_activity(
                 """
             ),
             {
-                "taskno": taskno,
-                "est_time": est_time,
-                "title": clean_title,
-                "details": clean_details,
-                "note": clean_note,
-                "environment": clean_environment,
-                "subenvironment": (
-                    clean_subenvironment
-                ),
-                "dependency": clean_dependency,
-                "resource": clean_resource,
-                "username": clean_username,
+                "taskno":
+                    taskno,
+
+                "est_time":
+                    est_time,
+
+                "title":
+                    clean_title,
+
+                "details":
+                    clean_details,
+
+                "note":
+                    clean_note,
+
+                "environment":
+                    clean_environment,
+
+                "subenvironment":
+                    clean_subenvironment,
+
+                "dependency":
+                    clean_dependency,
+
+                "resource":
+                    clean_resource,
+
+                "username":
+                    clean_username,
             },
         )
 
         db.commit()
 
         new_activity_id = db.scalar(
-            select(Activity.id)
+            select(
+                Activity.id
+            )
             .where(
-                Activity.taskno == taskno,
-                Activity.est_time == est_time,
+                Activity.taskno
+                == taskno,
+
+                Activity.est_time
+                == est_time,
+
                 Activity.environment
                 == clean_environment,
             )
-            .order_by(Activity.id.desc())
-            .limit(1)
+            .order_by(
+                Activity.id.desc()
+            )
+            .limit(
+                1
+            )
         )
 
         if new_activity_id is None:
@@ -404,14 +608,18 @@ def create_activity(
             name="activity_new.html",
             status_code=409,
             context={
-                "environments": environments,
+                "environments":
+                    environments,
+
                 "error": (
                     "An Activity already exists "
                     "with this Task Number, "
                     "estimated time, and "
                     "environment."
                 ),
-                "form": form_values,
+
+                "form":
+                    form_values,
             },
         )
 
@@ -431,7 +639,9 @@ def create_activity(
         url=(
             "/web/activities/"
             "{}?activity_added=true"
-        ).format(new_activity_id),
+        ).format(
+            new_activity_id
+        ),
         status_code=303,
     )
 
@@ -439,7 +649,7 @@ def create_activity(
 # ============================================================
 # EDIT ACTIVITY FORM
 #
-# Must also appear before /activities/{activity_id}
+# Must also appear before /activities/{activity_id}.
 # ============================================================
 
 @router.get(
@@ -449,8 +659,10 @@ def create_activity(
 def edit_activity_page(
     request: Request,
     activity_id: int,
+    return_url: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.get(
         Activity,
         activity_id,
@@ -459,34 +671,59 @@ def edit_activity_page(
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
 
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
+
     statuses = db.scalars(
-        select(Activity.status)
+        select(
+            Activity.status
+        )
         .where(
-            Activity.status.is_not(None)
+            Activity.status.is_not(
+                None
+            )
         )
         .distinct()
-        .order_by(Activity.status)
+        .order_by(
+            Activity.status
+        )
     ).all()
 
     return templates.TemplateResponse(
         request=request,
         name="activity_edit.html",
         context={
-            "activity": activity,
-            "environments": (
-                get_environment_values(db)
-            ),
-            "statuses": statuses,
-            "error": None,
+            "return_url": return_url_value,
+            "activity":
+                activity,
+
+            "environments":
+                get_environment_values(
+                    db
+                ),
+
+            "statuses":
+                statuses,
+
+            "error":
+                None,
         },
     )
 
 
 # ============================================================
 # UPDATE ACTIVITY
+#
+# Existing Activity must be inside the user's history window.
+# The updated estimated time must also remain inside the
+# permitted window.
 # ============================================================
 
 @router.post(
@@ -496,6 +733,7 @@ def edit_activity_page(
 def update_activity(
     request: Request,
     activity_id: int,
+    return_url: str = Form("/web/activities"),
     taskno: int = Form(...),
     est_time: datetime = Form(...),
     title: str = Form(...),
@@ -508,9 +746,12 @@ def update_activity(
     dependency: str = Form(""),
     resource: str = Form(""),
     approved: str = Form(""),
-    criticalact: Optional[str] = Form(None),
+    criticalact: Optional[str] = Form(
+        None
+    ),
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.get(
         Activity,
         activity_id,
@@ -519,34 +760,68 @@ def update_activity(
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
 
+    user = request.state.user
+
+    require_activity_history_access(
+        activity=activity,
+        user=user,
+    )
+
+    require_activity_datetime_access(
+        est_time=est_time,
+        user=user,
+    )
+
     clean_title = title.strip()
+
     clean_details = details.strip()
+
     clean_status = status.strip()
+
     clean_closed = closed.strip()
-    clean_environment = environment.strip()
+
+    clean_environment = (
+        environment.strip()
+    )
+
     clean_subenvironment = (
         subenvironment.strip()
     )
-    clean_dependency = dependency.strip()
+
+    clean_dependency = (
+        dependency.strip()
+    )
+
     clean_resource = resource.strip()
+
     clean_approved = approved.strip()
 
     statuses = db.scalars(
-        select(Activity.status)
+        select(
+            Activity.status
+        )
         .where(
-            Activity.status.is_not(None)
+            Activity.status.is_not(
+                None
+            )
         )
         .distinct()
-        .order_by(Activity.status)
+        .order_by(
+            Activity.status
+        )
     ).all()
 
     error = None
 
     if not clean_title:
-        error = "Title is required."
+        error = (
+            "Title is required."
+        )
 
     elif not clean_details:
         error = (
@@ -554,7 +829,9 @@ def update_activity(
         )
 
     elif not clean_environment:
-        error = "Environment is required."
+        error = (
+            "Environment is required."
+        )
 
     elif clean_closed not in (
         "Yes",
@@ -564,37 +841,49 @@ def update_activity(
             "Closed must be Yes or No."
         )
 
-    elif len(clean_title) > 500:
+    elif len(
+        clean_title
+    ) > 500:
         error = (
             "Title cannot exceed "
             "500 characters."
         )
 
-    elif len(clean_environment) > 10:
+    elif len(
+        clean_environment
+    ) > 10:
         error = (
             "Environment cannot exceed "
             "10 characters."
         )
 
-    elif len(clean_subenvironment) > 25:
+    elif len(
+        clean_subenvironment
+    ) > 25:
         error = (
             "Sub-environment cannot exceed "
             "25 characters."
         )
 
-    elif len(clean_dependency) > 50:
+    elif len(
+        clean_dependency
+    ) > 50:
         error = (
             "Dependency cannot exceed "
             "50 characters."
         )
 
-    elif len(clean_resource) > 50:
+    elif len(
+        clean_resource
+    ) > 50:
         error = (
             "Resource cannot exceed "
             "50 characters."
         )
 
-    elif len(clean_approved) > 50:
+    elif len(
+        clean_approved
+    ) > 50:
         error = (
             "Approved value cannot exceed "
             "50 characters."
@@ -606,34 +895,57 @@ def update_activity(
             name="activity_edit.html",
             status_code=400,
             context={
-                "activity": activity,
-                "environments": (
-                    get_environment_values(db)
-                ),
-                "statuses": statuses,
-                "error": error,
+                "return_url": return_url_value,
+                "activity":
+                    activity,
+
+                "environments":
+                    get_environment_values(
+                        db
+                    ),
+
+                "statuses":
+                    statuses,
+
+                "error":
+                    error,
             },
         )
 
     try:
         activity.taskno = taskno
+
         activity.est_time = est_time
+
         activity.title = clean_title
+
         activity.details = clean_details
+
         activity.status = clean_status
+
         activity.closed = clean_closed
+
         activity.note = note.strip()
+
         activity.environment = (
             clean_environment
         )
+
         activity.subenvironment = (
             clean_subenvironment
         )
+
         activity.dependency = (
             clean_dependency
         )
-        activity.resource = clean_resource
-        activity.approved = clean_approved
+
+        activity.resource = (
+            clean_resource
+        )
+
+        activity.approved = (
+            clean_approved
+        )
 
         activity.criticalact = (
             criticalact == "true"
@@ -649,11 +961,18 @@ def update_activity(
             name="activity_edit.html",
             status_code=409,
             context={
-                "activity": activity,
-                "environments": (
-                    get_environment_values(db)
-                ),
-                "statuses": statuses,
+                "return_url": return_url_value,
+                "activity":
+                    activity,
+
+                "environments":
+                    get_environment_values(
+                        db
+                    ),
+
+                "statuses":
+                    statuses,
+
                 "error": (
                     "Another Activity already "
                     "uses this Task Number, "
@@ -675,17 +994,18 @@ def update_activity(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/activities/"
-            "{}?activity_updated=true"
-        ).format(activity_id),
+        url=f"{return_url_value}{separator}activity_updated=true",
         status_code=303,
     )
 
 
 # ============================================================
 # SOFT DELETE ACTIVITY
+#
+# Admin-only through RBAC. Admin is still limited to the
+# previous seven days.
 # ============================================================
 
 @router.post(
@@ -693,9 +1013,12 @@ def update_activity(
     response_class=RedirectResponse,
 )
 def delete_activity(
+    request: Request,
     activity_id: int,
+    return_url: str = Form("/web/activities"),
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.get(
         Activity,
         activity_id,
@@ -704,11 +1027,19 @@ def delete_activity(
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
+
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
 
     try:
         activity.deleted = True
+
         db.commit()
 
     except SQLAlchemyError as exception:
@@ -721,17 +1052,18 @@ def delete_activity(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/activities/"
-            "{}?activity_deleted=true"
-        ).format(activity_id),
+        url=f"{return_url_value}{separator}activity_deleted=true",
         status_code=303,
     )
 
 
 # ============================================================
 # RESTORE ACTIVITY
+#
+# Admin-only through RBAC. Admin is still limited to the
+# previous seven days.
 # ============================================================
 
 @router.post(
@@ -739,9 +1071,12 @@ def delete_activity(
     response_class=RedirectResponse,
 )
 def restore_activity(
+    request: Request,
     activity_id: int,
+    return_url: str = Form("/web/activities"),
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.get(
         Activity,
         activity_id,
@@ -750,11 +1085,19 @@ def restore_activity(
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
+
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
 
     try:
         activity.deleted = False
+
         db.commit()
 
     except SQLAlchemyError as exception:
@@ -767,11 +1110,9 @@ def restore_activity(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/activities/"
-            "{}?activity_restored=true"
-        ).format(activity_id),
+        url=f"{return_url_value}{separator}activity_restored=true",
         status_code=303,
     )
 
@@ -787,6 +1128,7 @@ def restore_activity(
 def activity_detail_page(
     request: Request,
     activity_id: int,
+    return_url: Optional[str] = None,
     event_added: bool = False,
     activity_added: bool = False,
     activity_updated: bool = False,
@@ -794,46 +1136,66 @@ def activity_detail_page(
     activity_restored: bool = False,
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.scalar(
-        select(Activity)
+        select(
+            Activity
+        )
         .options(
             selectinload(
                 Activity.events
             )
         )
         .where(
-            Activity.id == activity_id
+            Activity.id
+            == activity_id
         )
     )
 
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
+
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
 
     return templates.TemplateResponse(
         request=request,
         name="activity_detail.html",
         context={
-            "activity": activity,
-            "event_added": event_added,
-            "activity_added": activity_added,
-            "activity_updated": (
-                activity_updated
-            ),
-            "activity_deleted": (
-                activity_deleted
-            ),
-            "activity_restored": (
-                activity_restored
-            ),
+            "return_url": return_url_value,
+            "activity":
+                activity,
+
+            "event_added":
+                event_added,
+
+            "activity_added":
+                activity_added,
+
+            "activity_updated":
+                activity_updated,
+
+            "activity_deleted":
+                activity_deleted,
+
+            "activity_restored":
+                activity_restored,
         },
     )
 
 
 # ============================================================
 # ADD EVENT
+#
+# Operator/Admin may add Events only when the parent Activity
+# is inside the user's permitted history window.
 # ============================================================
 
 @router.post(
@@ -841,12 +1203,15 @@ def activity_detail_page(
     response_class=RedirectResponse,
 )
 def add_activity_event(
+    request: Request,
     activity_id: int,
     time_started: datetime = Form(...),
     details: str = Form(...),
     operator: str = Form(...),
+    return_url: str = Form("/web/activities"),
     db: Session = Depends(get_db),
 ):
+    return_url_value = activity_return_url(return_url)
     activity = db.get(
         Activity,
         activity_id,
@@ -855,8 +1220,15 @@ def add_activity_event(
     if activity is None:
         raise HTTPException(
             status_code=404,
-            detail="Activity not found",
+            detail=(
+                "Activity not found"
+            ),
         )
+
+    require_activity_history_access(
+        activity=activity,
+        user=request.state.user,
+    )
 
     if activity.deleted:
         raise HTTPException(
@@ -868,6 +1240,7 @@ def add_activity_event(
         )
 
     clean_details = details.strip()
+
     clean_operator = operator.strip()
 
     if not clean_details:
@@ -881,10 +1254,14 @@ def add_activity_event(
     if not clean_operator:
         raise HTTPException(
             status_code=400,
-            detail="Operator is required.",
+            detail=(
+                "Operator is required."
+            ),
         )
 
-    if len(clean_operator) > 50:
+    if len(
+        clean_operator
+    ) > 50:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -906,10 +1283,17 @@ def add_activity_event(
                 """
             ),
             {
-                "activity_id": activity_id,
-                "time_started": time_started,
-                "details": clean_details,
-                "operator": clean_operator,
+                "activity_id":
+                    activity_id,
+
+                "time_started":
+                    time_started,
+
+                "details":
+                    clean_details,
+
+                "operator":
+                    clean_operator,
             },
         )
 
@@ -927,10 +1311,8 @@ def add_activity_event(
             ),
         ) from exception
 
+    separator = "&" if "?" in return_url_value else "?"
     return RedirectResponse(
-        url=(
-            "/web/activities/"
-            "{}?event_added=true"
-        ).format(activity_id),
+        url=f"{return_url_value}{separator}event_added=true",
         status_code=303,
     )

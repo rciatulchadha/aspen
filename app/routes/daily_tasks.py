@@ -735,8 +735,16 @@ def daily_tasks_page(
             }
         )
 
-    current_list_url = str(request.url)
+#    current_list_url = str(request.url)
+    current_list_url = request.url.path
 
+    if request.url.query:
+        current_list_url = (
+          "{}?{}".format(
+             request.url.path,
+             request.url.query,
+         )
+       )
     return templates.TemplateResponse(
         request=request,
         name="daily_tasks.html",

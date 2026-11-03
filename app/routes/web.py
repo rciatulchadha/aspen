@@ -250,8 +250,15 @@ def activities_page(
             )
         ).all()
 
-    current_list_url = str(request.url)
+    current_list_url = request.url.path
 
+    if request.url.query:
+         current_list_url = (
+             "{}?{}".format(
+                request.url.path,
+                request.url.query,
+             )
+         )
     return templates.TemplateResponse(
         request=request,
         name="activities.html",

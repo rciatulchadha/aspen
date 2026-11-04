@@ -50,11 +50,12 @@ class Activity(Base):
         nullable=False,
     )
 
-    status: Mapped[Optional[str]] = mapped_column(
-        String(15),
-        nullable=True,
+    status: Mapped[str] = mapped_column(
+    String(15),
+    nullable=False,
+    default="None",
+    server_default="None",
     )
-
     closed: Mapped[Optional[str]] = mapped_column(
         String(3),
         nullable=True,

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Daily Task {{ task.taskno }}{% endblock %}
+{% block content %}
+<div class="page-heading detail-heading">
+    <div>
+        <a class="back-link" href="{{ return_url }}">← Back to Daily Tasks</a>
+        <p class="eyebrow">DAILY TASK {{ task.serial }}</p>
+        <h1>{{ task.taskno }} · {{ task.title }}</h1>
+    </div>
+    <div class="detail-actions">
+        <span class="schedule-status schedule-status-{{ schedule_status|lower }}">{{ schedule_status }}</span>
+        {% if request.state.user.is_admin %}
+        <a class="secondary-button" href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ return_url|urlencode }}">Edit</a>
+        {% endif %}
+    </div>
+</div>
+<section class="detail-grid">
+    <article class="detail-card"><h2>Schedule</h2><dl>
+        <dt>Weekday</dt><dd>{{ weekday_name }}</dd>
+        <dt>Time</dt><dd>{{ task.time }}</dd>
+        <dt>Effective From</dt><dd>{{ task.effective_from }}</dd>
+        <dt>Effective To</dt><dd>{{ task.effective_to or 'Open-ended' }}</dd>
+        <dt>Environment</dt><dd>{{ task.environment }}</dd>
+        <dt>Sub-environment</dt><dd>{{ task.subenvironment or '—' }}</dd>
+    </dl></article>
+    <article class="detail-card"><h2>Task</h2><dl>
+        <dt>Status</dt><dd>{{ schedule_status }}</dd>
+        <dt>Resource</dt><dd>{{ task.resource or '—' }}</dd>
+        <dt>Dependency</dt><dd>{{ task.dependency or '—' }}</dd>
+        <dt>Critical</dt><dd>{{ 'Yes' if task.criticalact else 'No' }}</dd>
+        <dt>Deleted</dt><dd>{{ 'Yes' if task.deleted else 'No' }}</dd>
+    </dl></article>
+</section>
+<section class="detail-card full-width"><h2>Details</h2><div class="preserve-text">{{ task.details }}</div></section>
+<section class="detail-card full-width"><h2>Notes</h2><div class="preserve-text">{{ task.note or 'No notes recorded.' }}</div></section>
+<section class="detail-card full-width">
+    <p class="eyebrow">AUDIT</p><h2>Audit History</h2>
+    {% if audit_history %}
+    <div class="table-scroll"><table><thead><tr><th>When</th><th>User</th><th>Action</th><th>Result</th><th>Details</th></tr></thead><tbody>
+    {% for entry in audit_history %}<tr>
+        <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ entry.display_name or entry.username or 'System' }}</td>
+        <td>{{ entry.action }}</td><td>{{ entry.result }}</td>
+        <td>{{ entry.details or entry.reason or '—' }}</td>
+    </tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty-state card-empty">No audit entries are recorded for this Daily Task.</div>{% endif %}
+</section>
+{% endblock %}

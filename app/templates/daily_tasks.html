@@ -74,12 +74,14 @@ ASPEN Daily Tasks
             Generate Schedule
         </a>
 
+        {% if request.state.user.is_admin %}
         <a
             class="primary-button"
             href="/web/daily-tasks/new"
         >
             + Add Daily Task
         </a>
+        {% endif %}
 
     </div>
 
@@ -286,7 +288,7 @@ ASPEN Daily Tasks
                     <td>
 
                         <a
-                            href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
+                            href="/web/daily-tasks/{{ task.serial }}?return_url={{ current_list_url|urlencode }}"
                         >
                             {{ task.taskno }}
                         </a>
@@ -297,7 +299,7 @@ ASPEN Daily Tasks
                     <td>
 
                         <a
-                            href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
+                            href="/web/daily-tasks/{{ task.serial }}?return_url={{ current_list_url|urlencode }}"
                         >
                             {{ task.title }}
                         </a>
@@ -361,7 +363,8 @@ ASPEN Daily Tasks
                     <td>
 
                         <div class="table-actions">
-
+                            <a class="compact-button" href="/web/daily-tasks/{{ task.serial }}?return_url={{ current_list_url|urlencode }}">View</a>
+                            {% if request.state.user.is_admin %}
                             <a
                                 class="compact-button"
                                 href="/web/daily-tasks/{{ task.serial }}/edit?return_url={{ current_list_url|urlencode }}"
@@ -398,6 +401,7 @@ ASPEN Daily Tasks
                                     'Soft delete this Daily Task? Existing Activities will remain unchanged.'
                                 );"
                             >
+                                <input type="hidden" name="return_url" value="{{ current_list_url }}">
 
                                 <button
                                     type="submit"
@@ -408,6 +412,7 @@ ASPEN Daily Tasks
 
                             </form>
 
+                            {% endif %}
                             {% endif %}
 
                         </div>

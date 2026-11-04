@@ -34,9 +34,19 @@ from app.activity_access import (
     require_activity_datetime_access,
     require_activity_history_access,
 )
+from app.audit_history import (
+    AUDIT_TARGET_ACTIVITY,
+    describe_changes,
+    get_audit_history,
+)
+from app.activity_status import (
+    ACTIVITY_STATUSES,
+    normalize_activity_status,
+)
 from app.database import get_db
 from app.return_urls import activity_return_url
 from app.models import Activity
+from app.security import write_audit
 
 
 router = APIRouter(
@@ -218,20 +228,7 @@ def activities_page(
         )
     )
 
-    statuses = db.scalars(
-        select(
-            Activity.status
-        )
-        .where(
-            Activity.status.is_not(
-                None
-            )
-        )
-        .distinct()
-        .order_by(
-            Activity.status
-        )
-    ).all()
+    statuses = ACTIVITY_STATUSES
 
     subenvironments = []
 
@@ -251,14 +248,9 @@ def activities_page(
         ).all()
 
     current_list_url = request.url.path
-
     if request.url.query:
-         current_list_url = (
-             "{}?{}".format(
-                request.url.path,
-                request.url.query,
-             )
-         )
+        current_list_url = f"{request.url.path}?{request.url.query}"
+
     return templates.TemplateResponse(
         request=request,
         name="activities.html",
@@ -577,7 +569,7 @@ def create_activity(
             },
         )
 
-        db.commit()
+        db.flush()
 
         new_activity_id = db.scalar(
             select(
@@ -606,6 +598,22 @@ def create_activity(
                 "Created Activity could not "
                 "be located."
             )
+
+        write_audit(
+            db=db,
+            request=request,
+            action="ACTIVITY_CREATE",
+            result="SUCCESS",
+            user=request.state.user,
+            target_type=AUDIT_TARGET_ACTIVITY,
+            target_id=new_activity_id,
+            details=(
+                f"Task {taskno}; environment {clean_environment}; "
+                f"estimated time {est_time}"
+            ),
+        )
+
+        db.commit()
 
     except IntegrityError:
         db.rollback()
@@ -688,20 +696,7 @@ def edit_activity_page(
         user=request.state.user,
     )
 
-    statuses = db.scalars(
-        select(
-            Activity.status
-        )
-        .where(
-            Activity.status.is_not(
-                None
-            )
-        )
-        .distinct()
-        .order_by(
-            Activity.status
-        )
-    ).all()
+    statuses = ACTIVITY_STATUSES
 
     return templates.TemplateResponse(
         request=request,
@@ -788,7 +783,7 @@ def update_activity(
 
     clean_details = details.strip()
 
-    clean_status = status.strip()
+    clean_status = normalize_activity_status(status)
 
     clean_closed = closed.strip()
 
@@ -808,20 +803,7 @@ def update_activity(
 
     clean_approved = approved.strip()
 
-    statuses = db.scalars(
-        select(
-            Activity.status
-        )
-        .where(
-            Activity.status.is_not(
-                None
-            )
-        )
-        .distinct()
-        .order_by(
-            Activity.status
-        )
-    ).all()
+    statuses = ACTIVITY_STATUSES
 
     error = None
 
@@ -839,6 +821,9 @@ def update_activity(
         error = (
             "Environment is required."
         )
+
+    elif clean_status is None:
+        error = "Invalid Activity status."
 
     elif clean_closed not in (
         "Yes",
@@ -919,6 +904,22 @@ def update_activity(
             },
         )
 
+    changes = [
+        ("Task Number", activity.taskno, taskno),
+        ("Estimated Time", activity.est_time, est_time),
+        ("Title", activity.title, clean_title),
+        ("Details", activity.details, clean_details),
+        ("Status", activity.status or "None", clean_status),
+        ("Closed", activity.closed, clean_closed),
+        ("Notes", activity.note, note.strip()),
+        ("Environment", activity.environment, clean_environment),
+        ("Sub-environment", activity.subenvironment, clean_subenvironment),
+        ("Dependency", activity.dependency, clean_dependency),
+        ("Resource", activity.resource, clean_resource),
+        ("Approved", activity.approved, clean_approved),
+        ("Critical", activity.criticalact, criticalact == "true"),
+    ]
+
     try:
         activity.taskno = taskno
 
@@ -956,6 +957,17 @@ def update_activity(
 
         activity.criticalact = (
             criticalact == "true"
+        )
+
+        write_audit(
+            db=db,
+            request=request,
+            action="ACTIVITY_UPDATE",
+            result="SUCCESS",
+            user=user,
+            target_type=AUDIT_TARGET_ACTIVITY,
+            target_id=activity.id,
+            details=describe_changes(changes),
         )
 
         db.commit()
@@ -1047,6 +1059,17 @@ def delete_activity(
     try:
         activity.deleted = True
 
+        write_audit(
+            db=db,
+            request=request,
+            action="ACTIVITY_DELETE",
+            result="SUCCESS",
+            user=request.state.user,
+            target_type=AUDIT_TARGET_ACTIVITY,
+            target_id=activity.id,
+            details=f"Task {activity.taskno}",
+        )
+
         db.commit()
 
     except SQLAlchemyError as exception:
@@ -1104,6 +1127,17 @@ def restore_activity(
 
     try:
         activity.deleted = False
+
+        write_audit(
+            db=db,
+            request=request,
+            action="ACTIVITY_RESTORE",
+            result="SUCCESS",
+            user=request.state.user,
+            target_type=AUDIT_TARGET_ACTIVITY,
+            target_id=activity.id,
+            details=f"Task {activity.taskno}",
+        )
 
         db.commit()
 
@@ -1172,10 +1206,17 @@ def activity_detail_page(
         user=request.state.user,
     )
 
+    audit_history = get_audit_history(
+        db,
+        AUDIT_TARGET_ACTIVITY,
+        activity.id,
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="activity_detail.html",
         context={
+            "audit_history": audit_history,
             "return_url": return_url_value,
             "activity":
                 activity,
@@ -1302,6 +1343,20 @@ def add_activity_event(
                 "operator":
                     clean_operator,
             },
+        )
+
+        write_audit(
+            db=db,
+            request=request,
+            action="ACTIVITY_EVENT_ADD",
+            result="SUCCESS",
+            user=request.state.user,
+            target_type=AUDIT_TARGET_ACTIVITY,
+            target_id=activity.id,
+            details=(
+                f"Event at {time_started}; operator {clean_operator}; "
+                f"details {clean_details}"
+            ),
         )
 
         db.commit()

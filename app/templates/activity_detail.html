@@ -2,6 +2,41 @@
 
 {% block title %}
 Activity {{ activity.taskno }}
+
+<section class="detail-card full-width">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">AUDIT</p>
+            <h2>Audit History</h2>
+        </div>
+    </div>
+    {% if audit_history %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>When</th><th>User</th><th>Action</th>
+                    <th>Result</th><th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in audit_history %}
+                <tr>
+                    <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ entry.display_name or entry.username or 'System' }}</td>
+                    <td>{{ entry.action }}</td>
+                    <td>{{ entry.result }}</td>
+                    <td>{{ entry.details or entry.reason or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state card-empty">No audit entries are recorded for this Activity.</div>
+    {% endif %}
+</section>
+
 {% endblock %}
 
 {% block content %}
@@ -493,6 +528,41 @@ Activity {{ activity.taskno }}
 
     {% endif %}
 
+</section>
+
+
+<section class="detail-card full-width">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">AUDIT</p>
+            <h2>Audit History</h2>
+        </div>
+    </div>
+    {% if audit_history %}
+    <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>When</th><th>User</th><th>Action</th>
+                    <th>Result</th><th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in audit_history %}
+                <tr>
+                    <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ entry.display_name or entry.username or 'System' }}</td>
+                    <td>{{ entry.action }}</td>
+                    <td>{{ entry.result }}</td>
+                    <td>{{ entry.details or entry.reason or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state card-empty">No audit entries are recorded for this Activity.</div>
+    {% endif %}
 </section>
 
 {% endblock %}

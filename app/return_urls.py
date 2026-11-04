@@ -12,8 +12,8 @@ def safe_return_url(value, allowed_prefix, default):
 
 
 def activity_return_url(value):
-    return safe_return_url(value, '/web/activities', '/web/activities')
+    return safe_return_url(value, "/web/activities", "/web/activities")
 
 
 def daily_task_return_url(value):
-    return safe_return_url(value, '/web/daily-tasks', '/web/daily-tasks')
+    return safe_return_url(value, "/web/daily-tasks", "/web/daily-tasks")

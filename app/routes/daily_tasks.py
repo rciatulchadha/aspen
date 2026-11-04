@@ -27,6 +27,11 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.orm import Session
 
+from app.audit_history import (
+    AUDIT_TARGET_DAILY_TASK,
+    describe_changes,
+    get_audit_history,
+)
 from app.database import get_db
 from app.models import DailyTask
 from app.security import write_audit
@@ -735,16 +740,10 @@ def daily_tasks_page(
             }
         )
 
-#    current_list_url = str(request.url)
     current_list_url = request.url.path
-
     if request.url.query:
-        current_list_url = (
-          "{}?{}".format(
-             request.url.path,
-             request.url.query,
-         )
-       )
+        current_list_url = f"{request.url.path}?{request.url.query}"
+
     return templates.TemplateResponse(
         request=request,
         name="daily_tasks.html",
@@ -1088,6 +1087,43 @@ def create_daily_task(
 
 
 # ============================================================
+# DAILY TASK DETAIL / AUDIT HISTORY
+# ============================================================
+
+@router.get(
+    "/daily-tasks/{serial}",
+    response_class=HTMLResponse,
+)
+def daily_task_detail_page(
+    request: Request,
+    serial: int,
+    return_url: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    get_current_user(request)
+    return_url_value = daily_task_return_url(return_url)
+    task = get_daily_task_or_404(db, serial)
+    schedule_number = derive_schedule_from_taskno(task.taskno)
+    audit_history = get_audit_history(
+        db,
+        AUDIT_TARGET_DAILY_TASK,
+        task.serial,
+    )
+    return templates.TemplateResponse(
+        request=request,
+        name="daily_task_detail.html",
+        context={
+            "task": task,
+            "return_url": return_url_value,
+            "schedule_number": schedule_number,
+            "weekday_name": get_schedule_name(schedule_number),
+            "schedule_status": get_task_schedule_status(task),
+            "audit_history": audit_history,
+        },
+    )
+
+
+# ============================================================
 # EDIT DAILY TASK FORM
 # ============================================================
 
@@ -1115,10 +1151,17 @@ def edit_daily_task_page(
         )
     )
 
+    audit_history = get_audit_history(
+        db,
+        AUDIT_TARGET_DAILY_TASK,
+        task.serial,
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="daily_task_edit.html",
         context={
+            "audit_history": audit_history,
             "return_url": return_url_value,
             "task":
                 task,
@@ -1162,6 +1205,7 @@ def update_daily_task(
     request: Request,
     serial: int,
 
+    return_url: str = Form("/web/daily-tasks"),
     effective_from: date = Form(...),
     effective_to: Optional[date] = Form(
         None
@@ -1183,6 +1227,7 @@ def update_daily_task(
     db: Session = Depends(get_db),
 ):
     admin = require_admin(request)
+    return_url_value = daily_task_return_url(return_url)
 
     task = get_daily_task_or_404(
         db,
@@ -1269,6 +1314,19 @@ def update_daily_task(
                     error,
             },
         )
+
+    changes = [
+        ("Effective From", task.effective_from, effective_from),
+        ("Effective To", task.effective_to, effective_to),
+        ("Time", task.time, time_value),
+        ("Title", task.title, title_value),
+        ("Details", task.details, details_value),
+        ("Notes", task.note, note_value or None),
+        ("Dependency", task.dependency, dependency_value or None),
+        ("Sub-environment", task.subenvironment, subenvironment_value),
+        ("Resource", task.resource, resource_value or None),
+        ("Critical", task.criticalact, criticalact == "true"),
+    ]
 
     try:
         task.effective_from = (

@@ -6,6 +6,11 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import SessionLocal
+from app.environments import (
+    ASPEN_ENVIRONMENTS,
+    is_valid_environment,
+    normalize_environment,
+)
 
 
 SYSTEM_USER = "ASPEN_SCHEDULE_LOADER"
@@ -16,43 +21,74 @@ def get_environments(
     requested_environment=None,
 ):
     if requested_environment:
-        exists = db.scalar(
-            text(
-                """
-                SELECT COUNT(*)
-                FROM vw_environment_pc
-                WHERE dbkey = :environment
-                """
-            ),
-            {
-                "environment":
-                    requested_environment,
-            },
-        )
-
-        if not exists:
-            raise ValueError(
-                "Unknown Production Control "
-                "environment: {}".format(
-                    requested_environment
-                )
-            )
-
-        return [
+        normalized = normalize_environment(
             requested_environment
-        ]
-
-    return list(
-        db.scalars(
-            text(
-                """
-                SELECT dbkey
-                FROM vw_environment_pc
-                ORDER BY dbkey
-                """
+        )
+        if not is_valid_environment(
+            normalized
+        ):
+            raise ValueError(
+                "Environment must be Maestro, "
+                "V21, or SDM."
             )
-        ).all()
+        return [normalized]
+
+    return list(ASPEN_ENVIRONMENTS)
+
+
+def replace_activity_date_tokens(
+    db,
+    environment,
+    schedule_date,
+):
+    formatted_date = schedule_date.strftime(
+        "%d-%m-%Y"
     )
+
+    result = db.execute(
+        text(
+            """
+            UPDATE activities
+            SET
+                title = REPLACE(
+                    title,
+                    'DD-MM-YYYY',
+                    :formatted_date
+                ),
+                details = REPLACE(
+                    details,
+                    'DD-MM-YYYY',
+                    :formatted_date
+                ),
+                note = CASE
+                    WHEN note IS NULL THEN NULL
+                    ELSE REPLACE(
+                        note,
+                        'DD-MM-YYYY',
+                        :formatted_date
+                    )
+                END
+            WHERE environment = :environment
+              AND est_time >= CAST(:schedule_date AS date)
+              AND est_time < (
+                    CAST(:schedule_date AS date)
+                    + INTERVAL '1 day'
+              )
+              AND (
+                    title LIKE '%DD-MM-YYYY%'
+                    OR details LIKE '%DD-MM-YYYY%'
+                    OR note LIKE '%DD-MM-YYYY%'
+              )
+            """
+        ),
+        {
+            "environment": environment,
+            "schedule_date": schedule_date,
+            "formatted_date": formatted_date,
+        },
+    )
+
+    return result.rowcount or 0
 
 
 def count_missing_activities(
@@ -241,6 +277,14 @@ def populate_environment(
                 },
             )
 
+        replacements = 0
+        if not dry_run:
+            replacements = replace_activity_date_tokens(
+                db=db,
+                environment=environment,
+                schedule_date=schedule_date,
+            )
+
         results.append(
             {
                 "schedule_date":
@@ -253,6 +297,8 @@ def populate_environment(
                         if dry_run
                         else missing_before
                     ),
+                "date_tokens_replaced":
+                    replacements,
             }
         )
 
@@ -268,15 +314,22 @@ def populate_environment(
         for item in results
     )
 
+    total_replaced = sum(
+        item["date_tokens_replaced"]
+        for item in results
+    )
+
     details = (
         "Range {} through {}; "
         "{} day(s); {} missing "
-        "Activities; dry_run={}"
+        "Activities; {} date token(s) replaced; "
+        "dry_run={}"
     ).format(
         start_date,
         end_date,
         days,
         total_missing,
+        total_replaced,
         dry_run,
     )
 
@@ -420,6 +473,7 @@ def main():
             print()
 
             grand_total = 0
+            grand_replaced = 0
 
             for environment in environments:
                 print(
@@ -443,16 +497,16 @@ def main():
 
                 for result in results:
                     print(
-                        "  {}  missing={}"
+                        "  {}  missing={}  date_tokens_replaced={}"
                         .format(
-                            result[
-                                "schedule_date"
-                            ],
-                            result[
-                                "missing_before"
-                            ],
+                            result["schedule_date"],
+                            result["missing_before"],
+                            result["date_tokens_replaced"],
                         )
                     )
+                    grand_replaced += result[
+                        "date_tokens_replaced"
+                    ]
 
                     grand_total += (
                         result[
@@ -485,6 +539,10 @@ def main():
                 print(
                     "Activities inserted:",
                     grand_total,
+                )
+                print(
+                    "Date tokens replaced:",
+                    grand_replaced,
                 )
 
         return 0

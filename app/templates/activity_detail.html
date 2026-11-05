@@ -22,7 +22,7 @@ Activity {{ activity.taskno }}
             <tbody>
                 {% for entry in audit_history %}
                 <tr>
-                    <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="nowrap">{{ entry.occurred_at | toronto_time }}</td>
                     <td>{{ entry.display_name or entry.username or 'System' }}</td>
                     <td>{{ entry.action }}</td>
                     <td>{{ entry.result }}</td>
@@ -550,7 +550,7 @@ Activity {{ activity.taskno }}
             <tbody>
                 {% for entry in audit_history %}
                 <tr>
-                    <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="nowrap">{{ entry.occurred_at | toronto_time }}</td>
                     <td>{{ entry.display_name or entry.username or 'System' }}</td>
                     <td>{{ entry.action }}</td>
                     <td>{{ entry.result }}</td>

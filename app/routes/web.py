@@ -20,6 +20,13 @@ from sqlalchemy import (
     select,
     text,
 )
+
+from app.environments import (
+    ASPEN_ENVIRONMENTS,
+    is_valid_environment,
+    normalize_environment,
+)
+
 from sqlalchemy.exc import (
     IntegrityError,
     SQLAlchemyError,
@@ -27,6 +34,10 @@ from sqlalchemy.exc import (
 from sqlalchemy.orm import (
     Session,
     selectinload,
+)
+
+from app.display_time import (
+    format_toronto_datetime,
 )
 
 from app.activity_access import (
@@ -58,6 +69,9 @@ templates = Jinja2Templates(
     directory="app/templates"
 )
 
+templates.env.filters[
+    "toronto_time"
+] = format_toronto_datetime
 
 # ============================================================
 # HELPER
@@ -66,15 +80,7 @@ templates = Jinja2Templates(
 def get_environment_values(
     db,
 ):
-    return db.scalars(
-        select(
-            Activity.environment
-        )
-        .distinct()
-        .order_by(
-            Activity.environment
-        )
-    ).all()
+    return ASPEN_ENVIRONMENTS
 
 
 # ============================================================
@@ -369,9 +375,10 @@ def create_activity(
     clean_details = details.strip()
 
     clean_environment = (
-        environment.strip()
+      normalize_environment(
+        environment
+      )
     )
-
     clean_subenvironment = (
         subenvironment.strip()
     )
@@ -441,6 +448,13 @@ def create_activity(
     elif not clean_environment:
         error = (
             "Environment is required."
+        )
+    elif not is_valid_environment(
+        clean_environment
+    ):
+        error = (
+            "Environment must be Maestro, "
+            "V21, or SDM."
         )
 
     elif not clean_username:
@@ -788,7 +802,9 @@ def update_activity(
     clean_closed = closed.strip()
 
     clean_environment = (
-        environment.strip()
+        normalize_environment(
+            environment
+        )
     )
 
     clean_subenvironment = (
@@ -820,6 +836,13 @@ def update_activity(
     elif not clean_environment:
         error = (
             "Environment is required."
+        )
+    elif not is_valid_environment(
+        clean_environment
+    ):
+        error = (
+            "Environment must be Maestro, "
+            "V21, or SDM."
         )
 
     elif clean_status is None:

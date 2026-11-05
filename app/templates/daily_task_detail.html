@@ -38,7 +38,7 @@
     {% if audit_history %}
     <div class="table-scroll"><table><thead><tr><th>When</th><th>User</th><th>Action</th><th>Result</th><th>Details</th></tr></thead><tbody>
     {% for entry in audit_history %}<tr>
-        <td class="nowrap">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td class="nowrap">{{ entry.occurred_at | toronto_time }}</td>
         <td>{{ entry.display_name or entry.username or 'System' }}</td>
         <td>{{ entry.action }}</td><td>{{ entry.result }}</td>
         <td>{{ entry.details or entry.reason or '—' }}</td>

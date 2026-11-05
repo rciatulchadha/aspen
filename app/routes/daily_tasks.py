@@ -27,6 +27,16 @@ from sqlalchemy.exc import (
 )
 from sqlalchemy.orm import Session
 
+from app.environments import (
+    ASPEN_ENVIRONMENTS,
+    is_valid_environment,
+    normalize_environment,
+)
+
+from app.display_time import (
+    format_toronto_datetime,
+)
+
 from app.audit_history import (
     AUDIT_TARGET_DAILY_TASK,
     describe_changes,
@@ -49,7 +59,9 @@ router = APIRouter(
 templates = Jinja2Templates(
     directory="app/templates"
 )
-
+templates.env.filters[
+    "toronto_time"
+] = format_toronto_datetime
 
 # ============================================================
 # SCHEDULE OPTIONS
@@ -158,15 +170,7 @@ def require_admin(
 def get_environments(
     db: Session,
 ):
-    return db.scalars(
-        select(
-            DailyTask.environment
-        )
-        .distinct()
-        .order_by(
-            DailyTask.environment
-        )
-    ).all()
+    return ASPEN_ENVIRONMENTS
 
 
 def get_daily_task_or_404(
@@ -437,6 +441,20 @@ def allocate_task_number(
     environment: str,
     schedule: str,
 ):
+    environment = normalize_environment(
+        environment
+    )
+
+    if not is_valid_environment(
+        environment
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Environment must be Maestro, "
+                "V21, or SDM."
+            ),
+        )
     if schedule not in VALID_SCHEDULE_VALUES:
         raise HTTPException(
             status_code=400,
@@ -861,9 +879,10 @@ def create_daily_task(
     admin = require_admin(request)
 
     environment_value = (
-        environment.strip()
+      normalize_environment(
+        environment
+      )
     )
-
     title_value = title.strip()
     details_value = details.strip()
     note_value = note.strip()
@@ -913,23 +932,31 @@ def create_daily_task(
             criticalact == "true",
     }
 
-    error = validate_daily_task_values(
-        title=title_value,
-        details=details_value,
-        environment=(
-            environment_value
-        ),
-        subenvironment=(
-            subenvironment_value
-        ),
-        dependency=(
-            dependency_value
-        ),
-        resource=resource_value,
-        time_value=time_value,
-        effective_from=effective_from,
-        effective_to=effective_to,
-    )
+    if not is_valid_environment(
+        environment_value
+    ):
+        error = (
+            "Environment must be Maestro, "
+            "V21, or SDM."
+        )
+    else:
+        error = validate_daily_task_values(
+                title=title_value,
+            details=details_value,
+            environment=(
+                environment_value
+            ),
+            subenvironment=(
+                subenvironment_value
+            ),
+            dependency=(
+                dependency_value
+            ),
+            resource=resource_value,
+            time_value=time_value,
+            effective_from=effective_from,
+            effective_to=effective_to,
+        )
 
     if weekday not in VALID_SCHEDULE_VALUES:
         error = (
@@ -1726,13 +1753,26 @@ def populate_schedule(
     admin = require_admin(request)
 
     environment_value = (
-        environment.strip()
+        normalize_environment(
+            environment
+        )
     )
 
     if not environment_value:
         raise HTTPException(
             status_code=400,
             detail="Environment is required.",
+        )
+
+    if not is_valid_environment(
+        environment_value
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Environment must be Maestro, "
+                "V21, or SDM."
+            ),
         )
 
     date_difference = (
@@ -1844,13 +1884,26 @@ def populate_seven_day_schedule(
     admin = require_admin(request)
 
     environment_value = (
-        environment.strip()
+        normalize_environment(
+            environment
+        )
     )
 
     if not environment_value:
         raise HTTPException(
             status_code=400,
             detail="Environment is required.",
+        )
+
+    if not is_valid_environment(
+        environment_value
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Environment must be Maestro, "
+                "V21, or SDM."
+            ),
         )
 
     try:

@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: vsr-postgresql
+  namespace: aspen
+
+  labels:
+    app: vsr-postgresql
+    name: vsr-postgresql
+
+spec:
+
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  revisionHistoryLimit: 3
+
+  selector:
+    matchLabels:
+      name: vsr-postgresql
+
+  template:
+
+    metadata:
+      labels:
+        app: vsr-postgresql
+        name: vsr-postgresql
+
+    spec:
+
+      containers:
+
+        - name: postgresql
+
+          image: image-registry.openshift-image-registry.svc:5000/openshift/postgresql@sha256:f97d8469fca1953e95f1aa74f50421a947b9a36b54e705256d4046489405a9b3
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+
+          env:
+
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: vsr-postgresql
+                  key: database-user
+
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vsr-postgresql
+                  key: database-password
+
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: vsr-postgresql
+                  key: database-name
+
+          volumeMounts:
+
+            - name: vsr-postgresql-data
+              mountPath: /var/lib/pgsql/data
+
+          readinessProbe:
+
+            exec:
+              command:
+                - /usr/libexec/check-container
+
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+
+          livenessProbe:
+
+            exec:
+              command:
+                - /usr/libexec/check-container
+                - --live
+
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+
+          resources:
+
+            limits:
+              memory: 512Mi
+
+      volumes:
+
+        - name: vsr-postgresql-data
+
+          persistentVolumeClaim:
+            claimName: vsr-postgresql

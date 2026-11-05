@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: aspen-postgres-npe
+  namespace: openshift-gitops
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/rciatulchadha/aspen
+    targetRevision: main
+    path: gitops/postgres
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aspen
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
+      - PruneLast=true

@@ -1,8 +1,18 @@
+
 name: ASPEN CI
 
 
 # ============================================================
 # TRIGGERS
+#
+# Normal push:
+#   Build only when application/container code changes.
+#
+# GitOps-only changes under gitops/** do NOT build another
+# container image.
+#
+# workflow_dispatch:
+#   Used to create an explicit release tag such as 0.1.10.
 # ============================================================
 
 on:
@@ -17,7 +27,7 @@ on:
 
         required: true
 
-        default: "0.1.4"
+        default: "0.1.10"
 
 
   push:
@@ -25,6 +35,18 @@ on:
     branches:
 
       - main
+
+    paths:
+
+      - "app/**"
+
+      - "scripts/**"
+
+      - "requirements.txt"
+
+      - "Containerfile"
+
+      - ".github/workflows/aspen-ci.yml"
 
 
 # ============================================================
@@ -84,22 +106,37 @@ jobs:
 
           set -euo pipefail
 
-          echo "ASPEN CI"
-          echo "========"
           echo
+          echo "============================================"
+          echo "ASPEN CI"
+          echo "============================================"
+          echo
+
           echo "Commit : ${GITHUB_SHA}"
           echo "Branch : ${GITHUB_REF_NAME}"
           echo "Runner : ${RUNNER_NAME}"
+
           echo
           echo "Podman:"
           podman --version
+
+          echo
+          echo "Filesystem:"
+          df -h "${HOME}" || true
+
+          echo
+          echo "Podman storage:"
+          podman system df || true
 
 
       # ======================================================
       # PYTHON SOURCE VALIDATION
       #
-      # This validates the ASPEN source with the Python
-      # installed on the GitHub Runner.
+      # This only checks Python source syntax using whatever
+      # Python is available on the Runner.
+      #
+      # Full dependency/import tests happen inside the
+      # finished ASPEN container.
       # ======================================================
 
       - name: Compile ASPEN source
@@ -120,12 +157,15 @@ jobs:
       #
       # workflow_dispatch:
       #
-      #     User supplied release version
-      #     Example: 0.1.4
+      #   Uses explicit release version.
       #
-      # push to main:
+      #   Example:
       #
-      #     Git commit SHA
+      #       0.1.10
+      #
+      # push:
+      #
+      #   Uses immutable Git commit SHA.
       # ======================================================
 
       - name: Determine image tag
@@ -137,7 +177,6 @@ jobs:
         run: |
 
           set -euo pipefail
-
 
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
 
@@ -152,14 +191,15 @@ jobs:
 
           if [ -z "${IMAGE_TAG}" ]; then
 
-              echo "ERROR: Unable to determine image tag."
+              echo "ERROR: Unable to determine ASPEN image tag."
 
               exit 1
 
           fi
 
 
-          echo "tag=${IMAGE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${IMAGE_TAG}" \
+            >> "${GITHUB_OUTPUT}"
 
 
           echo
@@ -168,13 +208,59 @@ jobs:
 
 
       # ======================================================
+      # PRE-BUILD CLEANUP
+      #
+      # Remove dangling data before starting a large multi-
+      # stage build. This is important on the self-hosted
+      # Runner because Podman storage persists across jobs.
+      # ======================================================
+
+      - name: Prepare Podman storage
+
+        shell: bash
+
+        run: |
+
+          set -euo pipefail
+
+          echo
+          echo "Podman storage before cleanup:"
+
+          podman system df || true
+
+
+          podman container prune \
+            --force \
+            || true
+
+
+          podman image prune \
+            --force \
+            || true
+
+
+          echo
+          echo "Podman storage after cleanup:"
+
+          podman system df || true
+
+
+          echo
+          echo "Filesystem:"
+
+          df -h "${HOME}" || true
+
+
+      # ======================================================
       # BUILD ASPEN
       #
-      # Containerfile currently builds:
+      # Current architecture:
       #
-      #   Red Hat UBI 10
-      #   Python 3.12
-      #   UBI Micro runtime
+      # Builder:
+      #   Red Hat UBI 10 Python 3.12 Minimal
+      #
+      # Runtime:
+      #   Red Hat UBI 10 Micro
       # ======================================================
 
       - name: Build ASPEN container
@@ -195,13 +281,13 @@ jobs:
       # ======================================================
       # VERIFY PYTHON RUNTIME
       #
-      # Do not use:
-      #
-      #     --entrypoint python
-      #
-      # ASPEN UBI Micro intentionally contains:
+      # ASPEN intentionally uses:
       #
       #     /usr/bin/python3.12
+      #
+      # Do not use:
+      #
+      #     python
       # ======================================================
 
       - name: Validate Python runtime
@@ -241,10 +327,10 @@ jobs:
       # ======================================================
       # APPLICATION IMPORT VALIDATION
       #
-      # The database URL is deliberately synthetic.
+      # Synthetic database configuration is sufficient here.
       #
-      # This test confirms the packaged ASPEN application can
-      # import. It does not require the production database.
+      # We are validating that ASPEN and all route modules can
+      # import successfully from the finished image.
       # ======================================================
 
       - name: Validate ASPEN application
@@ -267,14 +353,34 @@ jobs:
 
 
       # ======================================================
-      # VALIDATE QUAY CREDENTIALS
+      # ENVIRONMENT CONFIGURATION VALIDATION
       #
-      # GitHub repository secrets required:
+      # Prevent old ASPEN environments from silently returning
+      # in a future build.
+      # ======================================================
+
+      - name: Validate ASPEN environments
+
+        shell: bash
+
+        run: |
+
+          set -euo pipefail
+
+          podman run \
+            --rm \
+            --entrypoint /usr/bin/python3.12 \
+            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}" \
+            -c "from app.environments import ASPEN_ENVIRONMENTS; assert ASPEN_ENVIRONMENTS == ['Maestro', 'V21', 'SDM']; print('ASPEN environments:', ASPEN_ENVIRONMENTS)"
+
+
+      # ======================================================
+      # QUAY CREDENTIAL VALIDATION
       #
-      #     QUAY_USERNAME
-      #     QUAY_TOKEN
+      # Repository secrets:
       #
-      # Values are intentionally never displayed.
+      #   QUAY_USERNAME
+      #   QUAY_TOKEN
       # ======================================================
 
       - name: Validate Quay credentials
@@ -352,15 +458,17 @@ jobs:
 
           set -euo pipefail
 
+          IMAGE="${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+
 
           echo
           echo "Pushing ASPEN image:"
-          echo "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+          echo "${IMAGE}"
           echo
 
 
           podman push \
-            "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+            "${IMAGE}"
 
 
       # ======================================================
@@ -375,21 +483,22 @@ jobs:
 
           set -euo pipefail
 
-
           echo
           echo "============================================"
           echo "ASPEN CI completed successfully"
           echo "============================================"
           echo
+
           echo "Image:"
           echo "${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+
           echo
           echo "Commit:"
           echo "${GITHUB_SHA}"
+
           echo
           echo "Runtime:"
           echo "Red Hat UBI 10 Micro / Python 3.12"
-          echo
 
 
       # ======================================================
@@ -410,14 +519,21 @@ jobs:
 
 
       # ======================================================
-      # LOCAL RUNNER CLEANUP
+      # CLEANUP LOCAL ASPEN CI IMAGE
       #
-      # Self-hosted runners retain Podman build layers.
-      # Cleaning dangling data prevents the ASPEN runner disk
-      # from filling up after repeated builds.
+      # Quay owns the persistent image after push.
+      #
+      # The self-hosted Runner should NOT retain:
+      #
+      #   aspen:<Git SHA>
+      #
+      # or locally generated release images.
+      #
+      # This prevents Podman storage from growing after every
+      # workflow execution.
       # ======================================================
 
-      - name: Cleanup Podman build artifacts
+      - name: Cleanup ASPEN CI image
 
         if: always()
 
@@ -425,17 +541,36 @@ jobs:
 
         run: |
 
-          echo "Podman disk usage before cleanup:"
+          set +e
+
+          IMAGE="${QUAY_IMAGE}:${{ steps.image.outputs.tag }}"
+
+
+          echo
+          echo "============================================"
+          echo "ASPEN Runner Cleanup"
+          echo "============================================"
+          echo
+
+          echo "Image built by workflow:"
+          echo "${IMAGE}"
+
+          echo
+          echo "Podman storage before cleanup:"
 
           podman system df || true
 
 
           echo
-          echo "Removing dangling images and stopped containers..."
+          echo "Removing local ASPEN CI image..."
 
-          podman image prune \
-            --force \
+          podman rmi \
+            "${IMAGE}" \
             || true
+
+
+          echo
+          echo "Removing stopped containers..."
 
           podman container prune \
             --force \
@@ -443,6 +578,24 @@ jobs:
 
 
           echo
-          echo "Podman disk usage after cleanup:"
+          echo "Removing dangling images..."
+
+          podman image prune \
+            --force \
+            || true
+
+
+          echo
+          echo "Podman storage after cleanup:"
 
           podman system df || true
+
+
+          echo
+          echo "Filesystem after cleanup:"
+
+          df -h "${HOME}" || true
+
+
+          echo
+          echo "ASPEN Runner cleanup completed."

@@ -1,20 +1,36 @@
+import csv
+import io
+
 from datetime import date, datetime, time, timedelta
 from typing import Optional
 
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     Request,
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import (
+    HTMLResponse,
+    StreamingResponse,
+)
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, text
+from sqlalchemy import (
+    String,
+    or_,
+    select,
+    text,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.environments import (
+    ASPEN_ENVIRONMENTS,
+    is_valid_environment,
+    normalize_environment,
+)
 from app.models import Activity
-
 
 router = APIRouter(
     prefix="/web/reports",
@@ -30,13 +46,10 @@ templates = Jinja2Templates(
 # HELPERS
 # ============================================================
 
-def get_environments(db):
-    return db.scalars(
-        select(Activity.environment)
-        .distinct()
-        .order_by(Activity.environment)
-    ).all()
-
+def get_environments(
+    db,
+):
+    return ASPEN_ENVIRONMENTS
 
 def start_of_day(value):
     if value is None:
@@ -48,15 +61,166 @@ def start_of_day(value):
     )
 
 
-def end_of_day(value):
+def next_day_start(
+    value,
+):
     if value is None:
         return None
 
     return datetime.combine(
-        value,
-        time.max,
+        value + timedelta(days=1),
+        time.min,
     )
 
+
+def build_rocc_report_statement(
+    environment,
+    date_from,
+    date_to,
+    search,
+):
+    from_value = start_of_day(
+        date_from
+    )
+
+    to_exclusive = next_day_start(
+        date_to
+    )
+
+    statement = (
+        select(
+            Activity.id.label(
+                "activity_id"
+            ),
+            Activity.taskno.label(
+                "task"
+            ),
+            Activity.est_time.label(
+                "activity_time"
+            ),
+            Activity.title.label(
+                "activity_title"
+            ),
+            Activity.details.label(
+                "activity_details"
+            ),
+            Activity.note.label(
+                "note"
+            ),
+            Activity.dependency.label(
+                "dependency"
+            ),
+            Activity.resource.label(
+                "resource"
+            ),
+        )
+        .where(
+            Activity.deleted.is_(False),
+            Activity.est_time >= from_value,
+            Activity.est_time < to_exclusive,
+        )
+    )
+
+    if environment:
+        statement = statement.where(
+            Activity.environment
+            == environment
+        )
+
+    search_value = (
+        search.strip()
+        if search
+        else ""
+    )
+
+    if search_value:
+        pattern = "%{}%".format(
+            search_value
+        )
+
+        statement = statement.where(
+            or_(
+                Activity.taskno.cast(
+                    String
+                ).ilike(
+                    pattern
+                ),
+                Activity.title.ilike(
+                    pattern
+                ),
+                Activity.details.ilike(
+                    pattern
+                ),
+                Activity.note.ilike(
+                    pattern
+                ),
+                Activity.dependency.ilike(
+                    pattern
+                ),
+                Activity.resource.ilike(
+                    pattern
+                ),
+            )
+        )
+
+    return statement.order_by(
+        Activity.est_time.asc(),
+        Activity.taskno.asc(),
+        Activity.id.asc(),
+    )
+
+
+def create_rocc_csv(
+    rows,
+):
+    output = io.StringIO(
+        newline=""
+    )
+
+    writer = csv.writer(
+        output,
+        quoting=csv.QUOTE_MINIMAL,
+        lineterminator="\r\n",
+    )
+
+    writer.writerow(
+        [
+            "Task",
+            "Time",
+            "Activity Title",
+            "Activity Details",
+            "Note",
+            "Dependency",
+            "Resource",
+        ]
+    )
+
+    for row in rows:
+        writer.writerow(
+            [
+                row.task,
+
+                (
+                    row.activity_time.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                    if row.activity_time
+                    else ""
+                ),
+
+                row.activity_title or "",
+                row.activity_details or "",
+                row.note or "",
+                row.dependency or "",
+                row.resource or "",
+            ]
+        )
+
+    # UTF-8 BOM helps Microsoft Excel identify UTF-8 CSV
+    # files without showing special characters incorrectly.
+    return "\ufeff{}".format(
+        output.getvalue()
+    )
 
 # ============================================================
 # REPORT HOME
@@ -77,7 +241,18 @@ def reports_home(
 
 
 # ============================================================
-# ROCC REPORT
+# ============================================================
+# ROCC OPERATIONS REPORT
+#
+# Uses activities directly instead of the legacy reporting
+# functions.
+#
+# Date behavior:
+#
+#   date_from >= 00:00:00
+#   date_to   <  next day 00:00:00
+#
+# This includes every Activity on the selected end date.
 # ============================================================
 
 @router.get(
@@ -86,114 +261,201 @@ def reports_home(
 )
 def rocc_report(
     request: Request,
+
     environment: Optional[str] = None,
+
     date_from: Optional[date] = None,
+
     date_to: Optional[date] = None,
+
     search: Optional[str] = None,
-    db: Session = Depends(get_db),
+
+    output_format: str = Query(
+        default="html",
+        alias="format",
+    ),
+
+    db: Session = Depends(
+        get_db
+    ),
 ):
     rows = []
     error = None
 
+    selected_environment = (
+        normalize_environment(
+            environment
+        )
+        if environment
+        else ""
+    )
+
+    search_value = (
+        search.strip()
+        if search
+        else ""
+    )
+
+    report_requested = (
+        date_from is not None
+        and date_to is not None
+    )
+
     if (
-        environment
-        and date_from
-        and date_to
+        selected_environment
+        and not is_valid_environment(
+            selected_environment
+        )
     ):
-        from_value = start_of_day(
-            date_from
+        error = (
+            "Environment must be All, "
+            "Maestro, V21, or SDM."
         )
 
-        to_value = end_of_day(
-            date_to
+    elif (
+        report_requested
+        and date_from > date_to
+    ):
+        error = (
+            "The From date cannot be "
+            "later than the To date."
         )
 
+    elif report_requested:
         try:
-            if search and search.strip():
-
-                rows = db.execute(
-                    text(
-                        """
-                        SELECT *
-                        FROM uf_roccreportsearch(
-                            CAST(
-                                :environment
-                                AS varchar(10)
-                            ),
-                            CAST(
-                                :date_from
-                                AS timestamp
-                            ),
-                            CAST(
-                                :date_to
-                                AS timestamp
-                            ),
-                            CAST(
-                                :search
-                                AS varchar(50)
-                            )
-                        )
-                        ORDER BY
-                            est_time,
-                            taskno,
-                            time_started
-                        """
+            statement = (
+                build_rocc_report_statement(
+                    environment=(
+                        selected_environment
+                        or None
                     ),
-                    {
-                        "environment":
-                            environment,
-                        "date_from":
-                            from_value,
-                        "date_to":
-                            to_value,
-                        "search":
-                            search.strip(),
-                    },
-                ).mappings().all()
+                    date_from=date_from,
+                    date_to=date_to,
+                    search=search_value,
+                )
+            )
 
-            else:
-
-                rows = db.execute(
-                    text(
-                        """
-                        SELECT *
-                        FROM uf_roccreport(
-                            CAST(
-                                :environment
-                                AS varchar(10)
-                            ),
-                            CAST(
-                                :date_from
-                                AS timestamp
-                            ),
-                            CAST(
-                                :date_to
-                                AS timestamp
-                            )
-                        )
-                        ORDER BY
-                            est_time,
-                            taskno,
-                            time_started
-                        """
-                    ),
-                    {
-                        "environment":
-                            environment,
-                        "date_from":
-                            from_value,
-                        "date_to":
-                            to_value,
-                    },
-                ).mappings().all()
+            rows = db.execute(
+                statement
+            ).mappings().all()
 
         except SQLAlchemyError:
             db.rollback()
 
             error = (
                 "Unable to generate "
-                "the ROCC report."
+                "the Operations report."
             )
+
+    if (
+        output_format.lower()
+        == "csv"
+    ):
+        if error:
+            return templates.TemplateResponse(
+                request=request,
+                name="report_rocc.html",
+                status_code=400,
+                context={
+                    "environments":
+                        get_environments(db),
+
+                    "environment":
+                        selected_environment,
+
+                    "date_from":
+                        (
+                            date_from.isoformat()
+                            if date_from
+                            else ""
+                        ),
+
+                    "date_to":
+                        (
+                            date_to.isoformat()
+                            if date_to
+                            else ""
+                        ),
+
+                    "search":
+                        search_value,
+
+                    "rows":
+                        rows,
+
+                    "error":
+                        error,
+
+                    "report_requested":
+                        report_requested,
+                },
+            )
+
+        if not report_requested:
+            return templates.TemplateResponse(
+                request=request,
+                name="report_rocc.html",
+                status_code=400,
+                context={
+                    "environments":
+                        get_environments(db),
+
+                    "environment":
+                        selected_environment,
+
+                    "date_from":
+                        "",
+
+                    "date_to":
+                        "",
+
+                    "search":
+                        search_value,
+
+                    "rows":
+                        [],
+
+                    "error": (
+                        "Select a From date and "
+                        "To date before downloading "
+                        "the CSV report."
+                    ),
+
+                    "report_requested":
+                        False,
+                },
+            )
+
+        csv_content = create_rocc_csv(
+            rows
+        )
+
+        filename = (
+            "aspen-activities-"
+            "{}-to-{}.csv"
+        ).format(
+            date_from.isoformat(),
+            date_to.isoformat(),
+        )
+
+        return StreamingResponse(
+            iter(
+                [
+                    csv_content
+                ]
+            ),
+            media_type=(
+                "text/csv; "
+                "charset=utf-8"
+            ),
+            headers={
+                "Content-Disposition": (
+                    'attachment; filename="{}"'
+                ).format(
+                    filename
+                ),
+            },
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -201,25 +463,37 @@ def rocc_report(
         context={
             "environments":
                 get_environments(db),
+
             "environment":
-                environment or "",
+                selected_environment,
+
             "date_from":
-                date_from.isoformat()
-                if date_from
-                else "",
+                (
+                    date_from.isoformat()
+                    if date_from
+                    else ""
+                ),
+
             "date_to":
-                date_to.isoformat()
-                if date_to
-                else "",
+                (
+                    date_to.isoformat()
+                    if date_to
+                    else ""
+                ),
+
             "search":
-                search or "",
+                search_value,
+
             "rows":
                 rows,
+
             "error":
                 error,
+
+            "report_requested":
+                report_requested,
         },
     )
-
 
 # ============================================================
 # ARCHIVE REPORT

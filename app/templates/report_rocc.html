@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-ROCC Operations Report
+ASPEN Operations Report
 {% endblock %}
 
 {% block content %}
@@ -18,12 +18,17 @@ ROCC Operations Report
         </a>
 
         <p class="eyebrow">
-            ROCC REPORTING
+            ASPEN REPORTING
         </p>
 
         <h1>
             Operations Report
         </h1>
+
+        <p>
+            Activity reporting by environment
+            and scheduled date.
+        </p>
 
     </div>
 
@@ -54,11 +59,15 @@ ROCC Operations Report
         <select
             id="environment"
             name="environment"
-            required
         >
 
-            <option value="">
-                Select environment
+            <option
+                value=""
+                {% if not environment %}
+                selected
+                {% endif %}
+            >
+                All
             </option>
 
             {% for value in environments %}
@@ -123,7 +132,7 @@ ROCC Operations Report
             id="search"
             name="search"
             value="{{ search }}"
-            placeholder="Optional text search"
+            placeholder="Task, title, details, note, dependency or resource"
         >
 
     </div>
@@ -135,26 +144,274 @@ ROCC Operations Report
             Run Report
         </button>
 
+        {% if report_requested and not error %}
+
+        <button
+            type="submit"
+            name="format"
+            value="csv"
+            class="secondary-button"
+        >
+            Download CSV
+        </button>
+
+        {% endif %}
+
     </div>
 
 </form>
 
 
-{% if environment and date_from and date_to %}
+{% if report_requested and not error %}
 
 <div class="report-summary">
 
     <strong>
-        {{ rows|length }}
+        {{ "{:,}".format(rows|length) }}
     </strong>
 
     report rows returned.
 
+    {% if environment %}
+
+    Environment:
+
+    <strong>
+        {{ environment }}
+    </strong>
+
+    {% else %}
+
+    Environment:
+
+    <strong>
+        All
+    </strong>
+
+    {% endif %}
+
+    ·
+
+    <strong>
+        {{ date_from }}
+    </strong>
+
+    through
+
+    <strong>
+        {{ date_to }}
+    </strong>
+
 </div>
 
 
-{% include "report_rows.html" %}
+<div class="table-card">
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Task
+                    </th>
+
+                    <th>
+                        Time
+                    </th>
+
+                    <th>
+                        Activity Title
+                    </th>
+
+                    <th>
+                        Activity Details
+                    </th>
+
+                    <th>
+                        Note
+                    </th>
+
+                    <th>
+                        Dependency
+                    </th>
+
+                    <th>
+                        Resource
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for row in rows %}
+
+                <tr>
+
+                    <td>
+
+                        <a
+                            href="/web/activities/{{ row.activity_id }}"
+                        >
+                            {{ row.task }}
+                        </a>
+
+                    </td>
+
+
+                    <td class="nowrap">
+
+                        {% if row.activity_time %}
+
+                        {{
+                            row.activity_time.strftime(
+                                "%Y-%m-%d %H:%M"
+                            )
+                        }}
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <a
+                            href="/web/activities/{{ row.activity_id }}"
+                        >
+                            {{
+                                row.activity_title
+                                or "—"
+                            }}
+                        </a>
+
+                    </td>
+
+
+                    <td class="report-details">
+
+                        <div class="preserve-text">
+                            {{
+                                row.activity_details
+                                or "—"
+                            }}
+                        </div>
+
+                    </td>
+
+
+                    <td class="report-details">
+
+                        <div class="preserve-text">
+                            {{
+                                row.note
+                                or "—"
+                            }}
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        {{
+                            row.dependency
+                            or "—"
+                        }}
+
+                    </td>
+
+
+                    <td>
+
+                        {{
+                            row.resource
+                            or "—"
+                        }}
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td
+                        colspan="7"
+                        class="empty-state"
+                    >
+                        No Activities were found
+                        for the selected report criteria.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
 
 {% endif %}
+
+
+<script>
+(function () {
+    const dateFrom =
+        document.getElementById(
+            "date_from"
+        );
+
+    const dateTo =
+        document.getElementById(
+            "date_to"
+        );
+
+    function updateMinimumToDate() {
+        if (!dateFrom.value) {
+            dateTo.removeAttribute(
+                "min"
+            );
+
+            return;
+        }
+
+        dateTo.min =
+            dateFrom.value;
+
+        if (
+            dateTo.value
+            && dateTo.value
+                < dateFrom.value
+        ) {
+            dateTo.value =
+                dateFrom.value;
+        }
+    }
+
+    dateFrom.addEventListener(
+        "change",
+        updateMinimumToDate
+    );
+
+    updateMinimumToDate();
+})();
+</script>
 
 {% endblock %}

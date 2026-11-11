@@ -1,417 +1,100 @@
 {% extends "base.html" %}
-
-{% block title %}
-ASPEN Operations Report
-{% endblock %}
-
+{% block title %}ASPEN Operations Report{% endblock %}
 {% block content %}
-
 <div class="page-heading">
-
     <div>
-
-        <a
-            class="back-link"
-            href="/web/reports"
-        >
-            ← Back to Reports
-        </a>
-
-        <p class="eyebrow">
-            ASPEN REPORTING
-        </p>
-
-        <h1>
-            Operations Report
-        </h1>
-
-        <p>
-            Activity reporting by environment
-            and scheduled date.
-        </p>
-
+        <a class="back-link" href="/web/reports">← Back to Reports</a>
+        <p class="eyebrow">ASPEN REPORTING</p>
+        <h1>Operations Report</h1>
+        <p>Activity reporting by environment and scheduled date/time.</p>
     </div>
-
 </div>
-
-
-{% if error %}
-
-<div class="alert alert-error">
-    {{ error }}
-</div>
-
-{% endif %}
-
-
-<form
-    method="get"
-    action="/web/reports/rocc"
-    class="report-filters"
->
-
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<form method="get" action="/web/reports/rocc" class="report-filters operations-report-filters">
     <div class="field">
-
-        <label for="environment">
-            Environment
-        </label>
-
-        <select
-            id="environment"
-            name="environment"
-        >
-
-            <option
-                value=""
-                {% if not environment %}
-                selected
-                {% endif %}
-            >
-                All
-            </option>
-
+        <label for="environment">Environment</label>
+        <select id="environment" name="environment">
+            <option value="" {% if not environment %}selected{% endif %}>All</option>
             {% for value in environments %}
-
-            <option
-                value="{{ value }}"
-                {% if value == environment %}
-                selected
-                {% endif %}
-            >
-                {{ value }}
-            </option>
-
+            <option value="{{ value }}" {% if value == environment %}selected{% endif %}>{{ value }}</option>
             {% endfor %}
-
         </select>
-
     </div>
-
-
     <div class="field">
-
-        <label for="date_from">
-            From
-        </label>
-
-        <input
-            id="date_from"
-            name="date_from"
-            type="date"
-            value="{{ date_from }}"
-            required
-        >
-
+        <label for="date_from">From Date / Time</label>
+        <input id="date_from" name="date_from" type="datetime-local" value="{{ date_from }}" required>
     </div>
-
-
     <div class="field">
-
-        <label for="date_to">
-            To
-        </label>
-
-        <input
-            id="date_to"
-            name="date_to"
-            type="date"
-            value="{{ date_to }}"
-            required
-        >
-
+        <label for="date_to">To Date / Time</label>
+        <input id="date_to" name="date_to" type="datetime-local" value="{{ date_to }}" required>
     </div>
-
-
     <div class="field">
-
-        <label for="search">
-            Search
-        </label>
-
-        <input
-            id="search"
-            name="search"
-            value="{{ search }}"
-            placeholder="Task, title, details, note, dependency or resource"
-        >
-
+        <label for="search">Search</label>
+        <input id="search" name="search" value="{{ search }}" placeholder="Task, title, details, note, dependency or resource">
     </div>
-
-
-    <div class="form-actions">
-
-        <button type="submit">
-            Run Report
-        </button>
-
+    <div class="form-actions report-filter-actions">
+        <button type="submit">Run Report</button>
         {% if report_requested and not error %}
-
-        <button
-            type="submit"
-            name="format"
-            value="csv"
-            class="secondary-button"
-        >
-            Download CSV
-        </button>
-
+        <button type="submit" name="format" value="xlsx" class="secondary-button">Download Excel</button>
         {% endif %}
-
     </div>
-
 </form>
-
-
 {% if report_requested and not error %}
-
 <div class="report-summary">
-
-    <strong>
-        {{ "{:,}".format(rows|length) }}
-    </strong>
-
-    report rows returned.
-
-    {% if environment %}
-
-    Environment:
-
-    <strong>
-        {{ environment }}
-    </strong>
-
-    {% else %}
-
-    Environment:
-
-    <strong>
-        All
-    </strong>
-
-    {% endif %}
-
-    ·
-
-    <strong>
-        {{ date_from }}
-    </strong>
-
-    through
-
-    <strong>
-        {{ date_to }}
-    </strong>
-
+    <strong>{{ "{:,}".format(rows|length) }}</strong> report rows returned.
+    Environment: <strong>{{ environment or "All" }}</strong> ·
+    <strong>{{ date_from.replace('T', ' ') }}</strong> through
+    <strong>{{ date_to.replace('T', ' ') }}</strong>
 </div>
-
-
-<div class="table-card">
-
+<div class="table-card operations-report-card">
     <div class="table-scroll">
-
-        <table>
-
-            <thead>
-
-                <tr>
-
-                    <th>
-                        Task
-                    </th>
-
-                    <th>
-                        Time
-                    </th>
-
-                    <th>
-                        Activity Title
-                    </th>
-
-                    <th>
-                        Activity Details
-                    </th>
-
-                    <th>
-                        Note
-                    </th>
-
-                    <th>
-                        Dependency
-                    </th>
-
-                    <th>
-                        Resource
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
+        <table class="operations-report-table">
+            <colgroup>
+                <col style="width: 7%;"><col style="width: 12%;">
+                <col style="width: 19%;"><col style="width: 28%;">
+                <col style="width: 16%;"><col style="width: 9%;">
+                <col style="width: 9%;">
+            </colgroup>
+            <thead><tr>
+                <th>Task</th><th>Time</th><th>Activity Title</th>
+                <th>Activity Details</th><th>Note</th>
+                <th>Dependency</th><th>Resource</th>
+            </tr></thead>
             <tbody>
-
-                {% for row in rows %}
-
+            {% for row in rows %}
                 <tr>
-
-                    <td>
-
-                        <a
-                            href="/web/activities/{{ row.activity_id }}"
-                        >
-                            {{ row.task }}
-                        </a>
-
-                    </td>
-
-
-                    <td class="nowrap">
-
-                        {% if row.activity_time %}
-
-                        {{
-                            row.activity_time.strftime(
-                                "%Y-%m-%d %H:%M"
-                            )
-                        }}
-
-                        {% else %}
-
-                        —
-
-                        {% endif %}
-
-                    </td>
-
-
-                    <td>
-
-                        <a
-                            href="/web/activities/{{ row.activity_id }}"
-                        >
-                            {{
-                                row.activity_title
-                                or "—"
-                            }}
-                        </a>
-
-                    </td>
-
-
-                    <td class="report-details">
-
-                        <div class="preserve-text">
-                            {{
-                                row.activity_details
-                                or "—"
-                            }}
-                        </div>
-
-                    </td>
-
-
-                    <td class="report-details">
-
-                        <div class="preserve-text">
-                            {{
-                                row.note
-                                or "—"
-                            }}
-                        </div>
-
-                    </td>
-
-
-                    <td>
-
-                        {{
-                            row.dependency
-                            or "—"
-                        }}
-
-                    </td>
-
-
-                    <td>
-
-                        {{
-                            row.resource
-                            or "—"
-                        }}
-
-                    </td>
-
+                    <td><a href="/web/activities/{{ row.activity_id }}">{{ row.task }}</a></td>
+                    <td class="nowrap">{% if row.activity_time %}{{ row.activity_time.strftime("%Y-%m-%d %H:%M") }}{% else %}—{% endif %}</td>
+                    <td><a href="/web/activities/{{ row.activity_id }}">{{ row.activity_title or "—" }}</a></td>
+                    <td class="report-details"><div class="preserve-text">{{ row.activity_details or "—" }}</div></td>
+                    <td class="report-details"><div class="preserve-text">{{ row.note or "—" }}</div></td>
+                    <td>{{ row.dependency or "—" }}</td>
+                    <td>{{ row.resource or "—" }}</td>
                 </tr>
-
-
-                {% else %}
-
-                <tr>
-
-                    <td
-                        colspan="7"
-                        class="empty-state"
-                    >
-                        No Activities were found
-                        for the selected report criteria.
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
+            {% else %}
+                <tr><td colspan="7" class="empty-state">No Activities were found for the selected report criteria.</td></tr>
+            {% endfor %}
             </tbody>
-
         </table>
-
     </div>
-
 </div>
-
 {% endif %}
-
-
 <script>
 (function () {
-    const dateFrom =
-        document.getElementById(
-            "date_from"
-        );
-
-    const dateTo =
-        document.getElementById(
-            "date_to"
-        );
-
-    function updateMinimumToDate() {
+    const dateFrom = document.getElementById("date_from");
+    const dateTo = document.getElementById("date_to");
+    function updateMinimumToDateTime() {
         if (!dateFrom.value) {
-            dateTo.removeAttribute(
-                "min"
-            );
-
+            dateTo.removeAttribute("min");
             return;
         }
-
-        dateTo.min =
-            dateFrom.value;
-
-        if (
-            dateTo.value
-            && dateTo.value
-                < dateFrom.value
-        ) {
-            dateTo.value =
-                dateFrom.value;
+        dateTo.min = dateFrom.value;
+        if (dateTo.value && dateTo.value < dateFrom.value) {
+            dateTo.value = dateFrom.value;
         }
     }
-
-    dateFrom.addEventListener(
-        "change",
-        updateMinimumToDate
-    );
-
-    updateMinimumToDate();
+    dateFrom.addEventListener("change", updateMinimumToDateTime);
+    updateMinimumToDateTime();
 })();
 </script>
-
 {% endblock %}

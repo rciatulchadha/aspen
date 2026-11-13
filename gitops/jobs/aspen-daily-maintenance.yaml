@@ -30,7 +30,7 @@ spec:
 
         - name: aspen-daily-maintenance
 
-          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.12
+          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.13
 
           imagePullPolicy: IfNotPresent
 

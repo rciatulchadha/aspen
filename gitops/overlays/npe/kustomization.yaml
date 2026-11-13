@@ -9,4 +9,4 @@ resources:
 images:
   - name: aspen-image
     newName: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen
-    newTag: 0.1.12
+    newTag: 0.1.13

@@ -1,0 +1,110 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  generateName: aspen-daily-maintenance-
+  namespace: aspen
+
+  labels:
+    app: aspen
+    component: daily-maintenance
+    managed-by: control-m
+
+spec:
+
+  backoffLimit: 0
+
+  template:
+
+    metadata:
+      labels:
+        app: aspen
+        component: daily-maintenance
+        managed-by: control-m
+
+    spec:
+
+      restartPolicy: Never
+
+      containers:
+
+        - name: aspen-daily-maintenance
+
+          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.12
+
+          imagePullPolicy: IfNotPresent
+
+          env:
+
+            - name: VSR_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aspen-secret
+                  key: VSR_DATABASE_URL
+
+            - name: VSR_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: aspen-secret
+                  key: VSR_SESSION_SECRET
+
+            - name: PYTHONPATH
+              value: "/opt/aspen-venv/aspen-venv/lib/python3.12/site-packages:/opt/app-root/src"
+
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+
+            - name: HOME
+              value: "/opt/app-root"
+
+          command:
+
+            - /bin/sh
+            - -c
+
+          args:
+
+            - |
+              set -eu
+
+              echo
+              echo "============================================================"
+              echo "ASPEN Daily Maintenance"
+              echo "============================================================"
+              echo
+
+              date
+
+              echo
+              echo "Step 1 - Seven-day database retention"
+              echo
+
+              /usr/bin/python3.12 \
+                /opt/app-root/src/scripts/purge_old_activities.py
+
+              echo
+              echo "Step 2 - Rolling seven-day schedule population"
+              echo
+
+              /usr/bin/python3.12 \
+                /opt/app-root/src/scripts/populate_seven_day_schedule.py \
+                --days 7
+
+              echo
+              echo "============================================================"
+              echo "ASPEN Daily Maintenance completed successfully"
+              echo "============================================================"
+              echo
+
+          resources:
+
+            requests:
+              cpu: 50m
+              memory: 128Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi

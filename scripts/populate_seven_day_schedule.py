@@ -24,6 +24,7 @@ def get_environments(
         normalized = normalize_environment(
             requested_environment
         )
+
         if not is_valid_environment(
             normalized
         ):
@@ -31,64 +32,10 @@ def get_environments(
                 "Environment must be Maestro, "
                 "V21, or SDM."
             )
+
         return [normalized]
 
     return list(ASPEN_ENVIRONMENTS)
-
-
-def replace_activity_date_tokens(
-    db,
-    environment,
-    schedule_date,
-):
-    formatted_date = schedule_date.strftime(
-        "%d-%m-%Y"
-    )
-
-    result = db.execute(
-        text(
-            """
-            UPDATE activities
-            SET
-                title = REPLACE(
-                    title,
-                    'DD-MM-YYYY',
-                    :formatted_date
-                ),
-                details = REPLACE(
-                    details,
-                    'DD-MM-YYYY',
-                    :formatted_date
-                ),
-                note = CASE
-                    WHEN note IS NULL THEN NULL
-                    ELSE REPLACE(
-                        note,
-                        'DD-MM-YYYY',
-                        :formatted_date
-                    )
-                END
-            WHERE environment = :environment
-              AND est_time >= CAST(:schedule_date AS date)
-              AND est_time < (
-                    CAST(:schedule_date AS date)
-                    + INTERVAL '1 day'
-              )
-              AND (
-                    title LIKE '%DD-MM-YYYY%'
-                    OR details LIKE '%DD-MM-YYYY%'
-                    OR note LIKE '%DD-MM-YYYY%'
-              )
-            """
-        ),
-        {
-            "environment": environment,
-            "schedule_date": schedule_date,
-            "formatted_date": formatted_date,
-        },
-    )
-
-    return result.rowcount or 0
 
 
 def count_missing_activities(
@@ -104,7 +51,6 @@ def count_missing_activities(
         text(
             """
             SELECT COUNT(*)
-
             FROM uf_autoeoxreplacedailylist(
                 CAST(
                     :environment
@@ -119,23 +65,16 @@ def count_missing_activities(
                     AS char(1)
                 )
             ) generated
-
             WHERE generated.taskno
                   IS NOT NULL
-
               AND generated.deleted = false
-
               AND NOT EXISTS (
                   SELECT 1
-
                   FROM activities existing
-
                   WHERE existing.taskno =
                         generated.taskno
-
                     AND existing.est_time =
                         generated.est_time
-
                     AND existing.environment =
                         generated.environment
               )
@@ -222,8 +161,10 @@ def populate_environment(
     days,
     dry_run,
 ):
+    today = date.today()
+
     start_date = (
-        date.today()
+        today
         + timedelta(
             days=start_offset
         )
@@ -238,7 +179,7 @@ def populate_environment(
         )
 
         schedule_date = (
-            date.today()
+            today
             + timedelta(
                 days=date_difference
             )
@@ -251,6 +192,8 @@ def populate_environment(
                 schedule_date=schedule_date,
             )
         )
+
+        inserted = 0
 
         if not dry_run:
             db.execute(
@@ -277,13 +220,7 @@ def populate_environment(
                 },
             )
 
-        replacements = 0
-        if not dry_run:
-            replacements = replace_activity_date_tokens(
-                db=db,
-                environment=environment,
-                schedule_date=schedule_date,
-            )
+            inserted = missing_before
 
         results.append(
             {
@@ -292,13 +229,7 @@ def populate_environment(
                 "missing_before":
                     missing_before,
                 "inserted":
-                    (
-                        0
-                        if dry_run
-                        else missing_before
-                    ),
-                "date_tokens_replaced":
-                    replacements,
+                    inserted,
             }
         )
 
@@ -314,22 +245,22 @@ def populate_environment(
         for item in results
     )
 
-    total_replaced = sum(
-        item["date_tokens_replaced"]
+    total_inserted = sum(
+        item["inserted"]
         for item in results
     )
 
     details = (
         "Range {} through {}; "
         "{} day(s); {} missing "
-        "Activities; {} date token(s) replaced; "
+        "Activities; {} Activities inserted; "
         "dry_run={}"
     ).format(
         start_date,
         end_date,
         days,
         total_missing,
-        total_replaced,
+        total_inserted,
         dry_run,
     )
 
@@ -472,8 +403,8 @@ def main():
 
             print()
 
-            grand_total = 0
-            grand_replaced = 0
+            grand_missing = 0
+            grand_inserted = 0
 
             for environment in environments:
                 print(
@@ -497,20 +428,23 @@ def main():
 
                 for result in results:
                     print(
-                        "  {}  missing={}  date_tokens_replaced={}"
+                        "  {}  missing={}  inserted={}"
                         .format(
                             result["schedule_date"],
                             result["missing_before"],
-                            result["date_tokens_replaced"],
+                            result["inserted"],
                         )
                     )
-                    grand_replaced += result[
-                        "date_tokens_replaced"
-                    ]
 
-                    grand_total += (
+                    grand_missing += (
                         result[
                             "missing_before"
+                        ]
+                    )
+
+                    grand_inserted += (
+                        result[
+                            "inserted"
                         ]
                     )
 
@@ -525,24 +459,19 @@ def main():
 
                 print(
                     "Total missing Activities:",
-                    grand_total,
+                    grand_missing,
                 )
 
             else:
                 db.commit()
 
                 print(
-                    "Schedule population "
-                    "committed."
+                    "Schedule population committed."
                 )
 
                 print(
                     "Activities inserted:",
-                    grand_total,
-                )
-                print(
-                    "Date tokens replaced:",
-                    grand_replaced,
+                    grand_inserted,
                 )
 
         return 0

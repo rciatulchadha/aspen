@@ -226,6 +226,12 @@ COPY app \
 COPY scripts \
     /opt/app-root/src/scripts
 
+# ------------------------------------------------------------
+# ASPEN DATABASE MIGRATIONS
+# ------------------------------------------------------------
+
+COPY database/migrations \
+    /opt/app-root/src/database/migrations
 
 # ============================================================
 # PYTHON ENVIRONMENT

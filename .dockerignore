@@ -50,11 +50,17 @@ __pycache__/
 
 
 # ------------------------------------------------------------
-# Database migration working files
-# These have already been applied to PostgreSQL.
+# Database SQL
+#
+# SQL is excluded by default. Database migrations are
+# explicitly included because they are release artifacts
+# consumed by run_database_migrations.py.
 # ------------------------------------------------------------
 
 *.sql
+!database/
+!database/migrations/
+!database/migrations/*.sql
 
 
 # ------------------------------------------------------------

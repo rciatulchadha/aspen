@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+
+metadata:
+  generateName: aspen-database-migration-
+  namespace: aspen
+
+  labels:
+    app: aspen
+    component: database-migration
+
+spec:
+
+  # Database migrations must not be automatically retried.
+  backoffLimit: 0
+
+  activeDeadlineSeconds: 1800
+
+  template:
+
+    metadata:
+      labels:
+        app: aspen
+        component: database-migration
+
+    spec:
+
+      restartPolicy: Never
+
+      containers:
+
+        - name: database-migration
+
+          # Update this to the release containing
+          # run_database_migrations.py.
+          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.15
+
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: VSR_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aspen-secret
+                  key: VSR_DATABASE_URL
+
+            - name: PYTHONPATH
+              value: "/opt/aspen-venv/aspen-venv/lib/python3.12/site-packages:/opt/app-root/src"
+
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+
+            - name: HOME
+              value: "/opt/app-root"
+
+          command:
+            - /usr/bin/python3.12
+
+          args:
+            - /opt/app-root/src/scripts/run_database_migrations.py
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi

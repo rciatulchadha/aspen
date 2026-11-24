@@ -33,7 +33,7 @@ spec:
 
           # Update this to the release containing
           # run_database_migrations.py.
-          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.15
+          image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.16
 
           imagePullPolicy: IfNotPresent
 

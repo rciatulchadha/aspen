@@ -4,37 +4,27 @@ kind: Job
 metadata:
   generateName: aspen-database-migration-
   namespace: aspen
-
   labels:
     app: aspen
     component: database-migration
 
 spec:
-
-  # Database migrations must not be automatically retried.
   backoffLimit: 0
-
   activeDeadlineSeconds: 1800
 
   template:
-
     metadata:
       labels:
         app: aspen
         component: database-migration
 
     spec:
-
       restartPolicy: Never
 
       containers:
-
         - name: database-migration
 
-          # Update this to the release containing
-          # run_database_migrations.py.
           image: rogers-registry-opp-ldc-poc-quay-openshift-operators.apps.opp-ldc-cl-01.rpc.ren.rogers.com/batch_ops/aspen:0.1.16
-
           imagePullPolicy: IfNotPresent
 
           env:
